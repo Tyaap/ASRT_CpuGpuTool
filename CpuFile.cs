@@ -115,14 +115,14 @@ namespace CpuGpuTool
         public void ReplaceCpuData(int entryIndex, string filePath)
         {
             using (FileStream fsIn = File.OpenRead(filePath))
-            using (FileStream fsOut = File.OpenWrite(cpuFilePath))
+            using (FileStream fsOut = File.Open(cpuFilePath, FileMode.Open))
             {
                 CpuEntry entry = entries[entryIndex];
                 int fileLength = (int)fsIn.Length;
-                if (fileLength > entry.cpuOffsetNextEntry)
+                if (fileLength + 0x20 > entry.cpuOffsetNextEntry)
                 {
-                    BinaryTools.ExpandFile(fsOut, entry.cpuOffsetData, fileLength - entry.cpuOffsetNextEntry);
-                    entry.cpuOffsetNextEntry = fileLength;
+                    BinaryTools.ExpandFile(fsOut, entry.cpuOffsetData, fileLength + 0x20 - entry.cpuOffsetNextEntry);
+                    entry.cpuOffsetNextEntry = fileLength + 0x20;
                 }
                 entry.cpuDataLength = fileLength;
                 WriteHeader(fsOut, entry, entry.cpuOffsetHeader);
