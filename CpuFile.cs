@@ -134,20 +134,21 @@ namespace CpuGpuTool
         public void ReplaceGpuData(int entryIndex, string filePath)
         {
             using (FileStream fsIn = File.OpenRead(filePath))
-            using (FileStream fsOut = File.Open(gpuFilePath, FileMode.Open))
+            using (FileStream fsOut1 = File.Open(cpuFilePath, FileMode.Open))
+            using (FileStream fsOut2 = File.Open(gpuFilePath, FileMode.Open))
             {
                 CpuEntry entry = entries[entryIndex];
                 int fileLength = (int)fsIn.Length;
                 if (fileLength > entry.gpuOffsetNextEntry)
                 {
-                    BinaryTools.ExpandFile(fsOut, entry.gpuOffsetData, fileLength - entry.gpuOffsetNextEntry);
+                    BinaryTools.ExpandFile(fsOut2, entry.gpuOffsetData, fileLength - entry.gpuOffsetNextEntry);
                     entry.gpuOffsetNextEntry = fileLength;
                 }
                 entry.gpuDataLength = fileLength;
-                WriteHeader(fsOut, entry, entry.cpuOffsetHeader);
-                BinaryTools.WriteData(fsIn, fsOut, fileLength, outOffset: entry.gpuOffsetData);
+                WriteHeader(fsOut1, entry, entry.cpuOffsetHeader);
+                BinaryTools.WriteData(fsIn, fsOut2, fileLength, outOffset: entry.gpuOffsetData);
             }
-            Parse(cpuFilePath);
+            (entries, usedDataTypes, isLittleEndian) = Parse(cpuFilePath);
         }
 
         public string ReplaceInvalidChars(string filename)
@@ -157,6 +158,7 @@ namespace CpuGpuTool
 
         public void WriteHeader(FileStream fs, CpuEntry entry, int offset=0)
         {
+            MessageBox.Show(offset.ToString());
             fs.Seek(offset, SeekOrigin.Begin);
             using (EndiannessAwareBinaryWriter b = new EndiannessAwareBinaryWriter(fs, isLittleEndian, System.Text.Encoding.ASCII, true))
             {
@@ -164,7 +166,7 @@ namespace CpuGpuTool
                 b.Write(entry.toolVersion);
                 b.Write(entry.cpuOffsetNextEntry);
                 b.Write(entry.cpuDataLength);
-                b.Write(entry.cpuOffsetNextEntry);
+                b.Write(entry.gpuOffsetNextEntry);
                 b.Write(entry.gpuDataLength);
                 b.Write(entry.unknown);
                 b.Write(entry.entryType == EntryType.Resource);
