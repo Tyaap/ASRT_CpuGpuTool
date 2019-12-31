@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Windows.Forms;
 
 namespace CpuGpuTool
 {
@@ -158,7 +157,6 @@ namespace CpuGpuTool
 
         public void WriteHeader(FileStream fs, CpuEntry entry, int offset=0)
         {
-            MessageBox.Show(offset.ToString());
             fs.Seek(offset, SeekOrigin.Begin);
             using (EndiannessAwareBinaryWriter b = new EndiannessAwareBinaryWriter(fs, isLittleEndian, System.Text.Encoding.ASCII, true))
             {
