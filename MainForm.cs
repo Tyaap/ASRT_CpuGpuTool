@@ -55,13 +55,13 @@ namespace CpuGpuTool
             for (int i = 0; i < count; i++)
             {
                 CpuEntry entry = cpuFile.entries[i];
-                if (entry.sourceName.Contains(nameFilter) && entry.dataType.GetDescription().Contains(typeFilter))
+                if (entry.name.Contains(nameFilter) && entry.dataType.GetDescription().Contains(typeFilter))
                 {
                     items.Add(new ListViewItem(new string[]
                     {
                         entry.entryNumber.ToString(),
                         entry.dataType.GetDescription(),
-                        entry.sourceName
+                        entry.name
                     }));
                 }
             }
@@ -86,16 +86,16 @@ namespace CpuGpuTool
                     "Entry type: {1}\n" +
                     "Data type: {2} ({2:X})\n" +
                     "Sumo tool version: {3}\n" +
-                    "Source name: {4}\n" +
-                    "CPU header offset: {5:X}\n\n",
-                    entry.entryNumber, entry.entryType, entry.dataType, entry.toolVersion, entry.sourceName, entry.cpuOffsetHeader
+                    "Name: {4} ({5:X8})\n" +
+                    "CPU header offset: 0x{6:X}\n\n",
+                    entry.entryNumber, entry.entryType, entry.dataType, entry.toolVersion, entry.name, entry.id, entry.cpuOffsetHeader
                 );
 
                 details += string.Format("CPU data: {0}\n", entry.cpuDataLength > 0 ? "Yes" : "No");
                 if (entry.cpuDataLength > 0)
                 {
                     details += string.Format(
-                        "    CPU file offset: {0:X}\n" +
+                        "    CPU file offset: 0x{0:X}\n" +
                         "    Size: {1} bytes\n\n",
                     entry.cpuOffsetData, entry.cpuDataLength);
                 }
@@ -104,7 +104,7 @@ namespace CpuGpuTool
                 if (entry.gpuDataLength > 0)
                 {
                     details += string.Format(
-                        "    GPU file offset: {0:X}\n" +
+                        "    GPU file offset: 0x{0:X}\n" +
                         "    Size: {1} bytes",
                     entry.gpuOffsetData, entry.gpuDataLength);
                 }

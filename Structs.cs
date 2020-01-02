@@ -14,6 +14,7 @@
         public int gpuOffsetNextEntry;
         public int gpuDataLength;
         public int unknown;
-        public string sourceName;
+        public string name;
+        public uint id;
     }
 }
