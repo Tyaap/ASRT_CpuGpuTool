@@ -107,7 +107,7 @@ namespace CpuGpuTool
 
                 if (entry.definitionId != 0 || entry.parentId != 0 || entry.daughterIds.Count > 0 || entry.instanceIds.Count > 0)
                 {
-                    details += "\n\n~~ Linked Node IDs ~~";
+                    details += "\n\n~~ Linked Nodes ~~";
                 }
                 if (entry.definitionId != 0)
                 {
