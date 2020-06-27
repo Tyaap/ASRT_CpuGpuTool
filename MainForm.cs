@@ -339,6 +339,8 @@ namespace CpuGpuTool
                 {
                     listView1.SelectedItems.Clear();
                     listView1.Items[index].Selected = true;
+                    listView1.Items[index].Focused = true;
+                    listView1.Items[index].EnsureVisible();
                     listView1.Select();
                 }
             }
