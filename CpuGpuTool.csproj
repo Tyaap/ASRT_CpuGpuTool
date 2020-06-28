@@ -84,6 +84,7 @@
     <Compile Include="EndiannessAwareBinaryReader.cs" />
     <Compile Include="EnumExtensions.cs" />
     <Compile Include="Enums.cs" />
+    <Compile Include="LongFile.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -96,6 +97,7 @@
     <Compile Include="InfoForm.Designer.cs">
       <DependentUpon>InfoForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="NativeMethods.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RichTextBoxEx.cs">

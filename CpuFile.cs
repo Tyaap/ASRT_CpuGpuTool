@@ -153,7 +153,10 @@ namespace CpuGpuTool
             CpuEntry entry = entriesList[entryIndex];
             if (entry.cpuDataLength > 0)
             {
-                string fileName = string.Format("{0}_CPU_{1}", entry.entryNumber, Path.GetFileName(ReplaceInvalidChars(entry.name)));
+                string start = entry.entryNumber + "_CPU_";
+                string end = Path.GetFileName(ReplaceInvalidChars(entry.name));
+                string fileName = start + end.Substring(Math.Max(0, start.Length + end.Length - 255));
+                
                 BinaryTools.SaveData(cpuFilePath, entry.cpuOffsetDataHeader, entry.cpuRelativeOffsetNextEntry, Path.Combine(outFolderPath, fileName));
                 return fileName;
             }

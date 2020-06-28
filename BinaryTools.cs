@@ -34,8 +34,10 @@ namespace CpuGpuTool
 
         public static void SaveData(string inFilePath, int offset, int length, string outFilePath)
         {
+            var handle = LongFile.CreateFileForWrite(outFilePath); // handle long paths
+            
             using (FileStream fsIn = File.OpenRead(inFilePath))
-            using (FileStream fsOut = File.Create(outFilePath))
+            using (FileStream fsOut = new FileStream(handle, FileAccess.Write))
             {
                 WriteData(fsIn, fsOut, length, offset);
             }
