@@ -48,7 +48,7 @@
             this.tableLayoutPanel1.RowCount = 2;
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(158, 86);
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(202, 86);
             this.tableLayoutPanel1.TabIndex = 0;
             // 
             // button1
@@ -57,7 +57,7 @@
             this.button1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.button1.Location = new System.Drawing.Point(3, 46);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(152, 37);
+            this.button1.Size = new System.Drawing.Size(196, 37);
             this.button1.TabIndex = 1;
             this.button1.Text = "Submit";
             this.button1.UseVisualStyleBackColor = true;
@@ -67,14 +67,14 @@
             this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.textBox1.Location = new System.Drawing.Point(3, 9);
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(152, 25);
+            this.textBox1.Size = new System.Drawing.Size(196, 25);
             this.textBox1.TabIndex = 0;
             // 
             // DialogBoxTextEntry
             // 
             this.AcceptButton = this.button1;
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.ClientSize = new System.Drawing.Size(158, 86);
+            this.ClientSize = new System.Drawing.Size(202, 86);
             this.Controls.Add(this.tableLayoutPanel1);
             this.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;

@@ -56,6 +56,7 @@
             this.deleteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.renameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.entryIDToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.changeDefinitionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.changeParentToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
@@ -64,6 +65,14 @@
             this.gpuDataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.bothToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.insertFromFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.insertToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.cPUDataToolStripMenuItem2 = new System.Windows.Forms.ToolStripMenuItem();
+            this.cPUGPUDataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.replaceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.cPUDataToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.bothToolStripMenuItem2 = new System.Windows.Forms.ToolStripMenuItem();
+            this.insertToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.replaceToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -268,7 +277,7 @@
             this.comboBox1.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.Suggest;
             this.comboBox1.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
             this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Location = new System.Drawing.Point(4, 39);
+            this.comboBox1.Location = new System.Drawing.Point(4, 37);
             this.comboBox1.Margin = new System.Windows.Forms.Padding(4);
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(191, 25);
@@ -327,33 +336,33 @@
             this.saveToFileToolStripMenuItem,
             this.insertFromFileToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(152, 164);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(122, 164);
             // 
             // cutToolStripMenuItem
             // 
             this.cutToolStripMenuItem.Name = "cutToolStripMenuItem";
-            this.cutToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
+            this.cutToolStripMenuItem.Size = new System.Drawing.Size(121, 22);
             this.cutToolStripMenuItem.Text = "Cut";
             this.cutToolStripMenuItem.Click += new System.EventHandler(this.CutToolStripMenuItem_Click);
             // 
             // copyToolStripMenuItem
             // 
             this.copyToolStripMenuItem.Name = "copyToolStripMenuItem";
-            this.copyToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
+            this.copyToolStripMenuItem.Size = new System.Drawing.Size(121, 22);
             this.copyToolStripMenuItem.Text = "Copy";
             this.copyToolStripMenuItem.Click += new System.EventHandler(this.CopyToolStripMenuItem_Click);
             // 
             // pasteToolStripMenuItem
             // 
             this.pasteToolStripMenuItem.Name = "pasteToolStripMenuItem";
-            this.pasteToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
+            this.pasteToolStripMenuItem.Size = new System.Drawing.Size(121, 22);
             this.pasteToolStripMenuItem.Text = "Paste";
             this.pasteToolStripMenuItem.Click += new System.EventHandler(this.PasteToolStripMenuItem_Click);
             // 
             // deleteToolStripMenuItem
             // 
             this.deleteToolStripMenuItem.Name = "deleteToolStripMenuItem";
-            this.deleteToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
+            this.deleteToolStripMenuItem.Size = new System.Drawing.Size(121, 22);
             this.deleteToolStripMenuItem.Text = "Delete";
             this.deleteToolStripMenuItem.Click += new System.EventHandler(this.DeleteToolStripMenuItem_Click);
             // 
@@ -361,34 +370,45 @@
             // 
             this.editToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.renameToolStripMenuItem,
+            this.entryIDToolStripMenuItem,
             this.changeDefinitionToolStripMenuItem,
             this.changeParentToolStripMenuItem});
             this.editToolStripMenuItem.Name = "editToolStripMenuItem";
-            this.editToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
+            this.editToolStripMenuItem.Size = new System.Drawing.Size(121, 22);
             this.editToolStripMenuItem.Text = "Edit";
             // 
             // renameToolStripMenuItem
             // 
             this.renameToolStripMenuItem.Name = "renameToolStripMenuItem";
-            this.renameToolStripMenuItem.Size = new System.Drawing.Size(169, 22);
-            this.renameToolStripMenuItem.Text = "Rename";
+            this.renameToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.renameToolStripMenuItem.Text = "Name";
+            this.renameToolStripMenuItem.Click += new System.EventHandler(this.RenameToolStripMenuItem_Click);
+            // 
+            // entryIDToolStripMenuItem
+            // 
+            this.entryIDToolStripMenuItem.Name = "entryIDToolStripMenuItem";
+            this.entryIDToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.entryIDToolStripMenuItem.Text = "ID";
+            this.entryIDToolStripMenuItem.Click += new System.EventHandler(this.EntryIDToolStripMenuItem_Click);
             // 
             // changeDefinitionToolStripMenuItem
             // 
             this.changeDefinitionToolStripMenuItem.Name = "changeDefinitionToolStripMenuItem";
-            this.changeDefinitionToolStripMenuItem.Size = new System.Drawing.Size(169, 22);
-            this.changeDefinitionToolStripMenuItem.Text = "Change definition";
+            this.changeDefinitionToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.changeDefinitionToolStripMenuItem.Text = "Definition ID";
+            this.changeDefinitionToolStripMenuItem.Click += new System.EventHandler(this.ChangeDefinitionToolStripMenuItem_Click);
             // 
             // changeParentToolStripMenuItem
             // 
             this.changeParentToolStripMenuItem.Name = "changeParentToolStripMenuItem";
-            this.changeParentToolStripMenuItem.Size = new System.Drawing.Size(169, 22);
-            this.changeParentToolStripMenuItem.Text = "Change parent";
+            this.changeParentToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.changeParentToolStripMenuItem.Text = "Parent ID";
+            this.changeParentToolStripMenuItem.Click += new System.EventHandler(this.ChangeParentToolStripMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(148, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(118, 6);
             // 
             // saveToFileToolStripMenuItem
             // 
@@ -397,35 +417,96 @@
             this.gpuDataToolStripMenuItem,
             this.bothToolStripMenuItem});
             this.saveToFileToolStripMenuItem.Name = "saveToFileToolStripMenuItem";
-            this.saveToFileToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
-            this.saveToFileToolStripMenuItem.Text = "Save to file";
+            this.saveToFileToolStripMenuItem.Size = new System.Drawing.Size(121, 22);
+            this.saveToFileToolStripMenuItem.Text = "To file";
             // 
             // cpuDataToolStripMenuItem
             // 
             this.cpuDataToolStripMenuItem.Name = "cpuDataToolStripMenuItem";
-            this.cpuDataToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.cpuDataToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.cpuDataToolStripMenuItem.Text = "CPU Data";
             this.cpuDataToolStripMenuItem.Click += new System.EventHandler(this.CpuDataToolStripMenuItem_Click);
             // 
             // gpuDataToolStripMenuItem
             // 
             this.gpuDataToolStripMenuItem.Name = "gpuDataToolStripMenuItem";
-            this.gpuDataToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.gpuDataToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.gpuDataToolStripMenuItem.Text = "GPU Data";
             this.gpuDataToolStripMenuItem.Click += new System.EventHandler(this.GpuDataToolStripMenuItem_Click);
             // 
             // bothToolStripMenuItem
             // 
             this.bothToolStripMenuItem.Name = "bothToolStripMenuItem";
-            this.bothToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.bothToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.bothToolStripMenuItem.Text = "Both";
             this.bothToolStripMenuItem.Click += new System.EventHandler(this.BothToolStripMenuItem_Click);
             // 
             // insertFromFileToolStripMenuItem
             // 
+            this.insertFromFileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.insertToolStripMenuItem,
+            this.replaceToolStripMenuItem,
+            this.bothToolStripMenuItem2});
+            this.insertFromFileToolStripMenuItem.Enabled = false;
             this.insertFromFileToolStripMenuItem.Name = "insertFromFileToolStripMenuItem";
-            this.insertFromFileToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
-            this.insertFromFileToolStripMenuItem.Text = "Insert from file";
+            this.insertFromFileToolStripMenuItem.Size = new System.Drawing.Size(121, 22);
+            this.insertFromFileToolStripMenuItem.Text = "From file";
+            // 
+            // insertToolStripMenuItem
+            // 
+            this.insertToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.cPUDataToolStripMenuItem2,
+            this.cPUGPUDataToolStripMenuItem});
+            this.insertToolStripMenuItem.Name = "insertToolStripMenuItem";
+            this.insertToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.insertToolStripMenuItem.Text = "CPU data";
+            // 
+            // cPUDataToolStripMenuItem2
+            // 
+            this.cPUDataToolStripMenuItem2.Name = "cPUDataToolStripMenuItem2";
+            this.cPUDataToolStripMenuItem2.Size = new System.Drawing.Size(115, 22);
+            this.cPUDataToolStripMenuItem2.Text = "Insert";
+            // 
+            // cPUGPUDataToolStripMenuItem
+            // 
+            this.cPUGPUDataToolStripMenuItem.Name = "cPUGPUDataToolStripMenuItem";
+            this.cPUGPUDataToolStripMenuItem.Size = new System.Drawing.Size(115, 22);
+            this.cPUGPUDataToolStripMenuItem.Text = "Replace";
+            // 
+            // replaceToolStripMenuItem
+            // 
+            this.replaceToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.cPUDataToolStripMenuItem1});
+            this.replaceToolStripMenuItem.Name = "replaceToolStripMenuItem";
+            this.replaceToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.replaceToolStripMenuItem.Text = "GPU data";
+            // 
+            // cPUDataToolStripMenuItem1
+            // 
+            this.cPUDataToolStripMenuItem1.Name = "cPUDataToolStripMenuItem1";
+            this.cPUDataToolStripMenuItem1.Size = new System.Drawing.Size(115, 22);
+            this.cPUDataToolStripMenuItem1.Text = "Replace";
+            // 
+            // bothToolStripMenuItem2
+            // 
+            this.bothToolStripMenuItem2.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.insertToolStripMenuItem1,
+            this.replaceToolStripMenuItem1});
+            this.bothToolStripMenuItem2.Name = "bothToolStripMenuItem2";
+            this.bothToolStripMenuItem2.Size = new System.Drawing.Size(180, 22);
+            this.bothToolStripMenuItem2.Text = "Both";
+            // 
+            // insertToolStripMenuItem1
+            // 
+            this.insertToolStripMenuItem1.Name = "insertToolStripMenuItem1";
+            this.insertToolStripMenuItem1.Size = new System.Drawing.Size(115, 22);
+            this.insertToolStripMenuItem1.Text = "Insert";
+            // 
+            // replaceToolStripMenuItem1
+            // 
+            this.replaceToolStripMenuItem1.Name = "replaceToolStripMenuItem1";
+            this.replaceToolStripMenuItem1.Size = new System.Drawing.Size(115, 22);
+            this.replaceToolStripMenuItem1.Text = "Replace";
             // 
             // MainForm
             // 
@@ -493,6 +574,15 @@
         private System.Windows.Forms.ToolStripMenuItem cpuDataToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem gpuDataToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem bothToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem entryIDToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem insertToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem cPUDataToolStripMenuItem2;
+        private System.Windows.Forms.ToolStripMenuItem cPUGPUDataToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem replaceToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem cPUDataToolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem bothToolStripMenuItem2;
+        private System.Windows.Forms.ToolStripMenuItem insertToolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem replaceToolStripMenuItem1;
     }
 }
 

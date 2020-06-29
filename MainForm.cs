@@ -47,8 +47,17 @@ namespace CpuGpuTool
             comboBox1.Items.AddRange(items);
         }
 
-        private void RefreshCpuEntryList()
+        private void RefreshCpuEntryList(bool keepSelectedItems = false)
         {
+            int[] selectedIndices = null;
+            int focusedItemIndex = 0;
+            if (keepSelectedItems)
+            {
+                focusedItemIndex = listView1.FocusedItem.Index;
+                selectedIndices = new int[listView1.SelectedIndices.Count];
+                listView1.SelectedIndices.CopyTo(selectedIndices, 0);
+            }
+
             listView1.Items.Clear();
             int count = cpuFile.Count;
             List<ListViewItem> items = new List<ListViewItem>();
@@ -66,6 +75,17 @@ namespace CpuGpuTool
                 }
             }
             AddListViewItems(listView1, items.ToArray());
+
+            if (keepSelectedItems)
+            {
+                count = selectedIndices.Length;
+                for (int i = 0; i < count; i++)
+                {
+                    listView1.Items[selectedIndices[i]].Selected = true;
+                }
+                listView1.Items[focusedItemIndex].Focused = true;
+                listView1.Items[focusedItemIndex].EnsureVisible();
+            }
         }
 
         public void RefreshEntryStatus()
@@ -248,16 +268,12 @@ namespace CpuGpuTool
                         int entryIndex = int.Parse(listView1.SelectedItems[i].Text) - 1;
                         if (cpuData)
                         {
-                            fileName = cpuFile.SaveCpuData(entryIndex, folderBrowserDialog.SelectedPath);
-                            if (fileName != null)
-                            {
-                                fileNames.Add(fileName);
-                            }
+                            fileNames.Add(cpuFile.SaveCpuData(entryIndex, folderBrowserDialog.SelectedPath));
                         }
                         if (gpuData)
                         {
                             fileName = cpuFile.SaveGpuData(entryIndex, folderBrowserDialog.SelectedPath);
-                            if (fileName != null)
+                            if (!string.IsNullOrEmpty(fileName))
                             {
                                 fileNames.Add(fileName);
                             }
@@ -291,13 +307,18 @@ namespace CpuGpuTool
             }
         }
 
-        private void SelectEntryByID(string idString)
+        private bool ParseHexString(string idString, out uint id)
         {
             if (idString.StartsWith("0x", StringComparison.CurrentCultureIgnoreCase))
             {
                 idString = idString.Substring(2);
             }
-            if (uint.TryParse(idString, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out uint id))
+            return uint.TryParse(idString, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out id);
+        }
+
+        private void SelectEntryByID(string idString)
+        {
+            if (ParseHexString(idString, out uint id))
             {
                 if (!cpuFile.entriesDictionary.TryGetValue(id, out CpuEntry entry))
                 {
@@ -327,33 +348,37 @@ namespace CpuGpuTool
                 if (listView1.FocusedItem.Bounds.Contains(e.Location))
                 {
                     int count = listView1.SelectedItems.Count;
-                    bool onlyNodesSelected = true;
-                    for (int i = 0; i < count; i++)
-                    {
-                        int entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text);
-                        if (cpuFile[entryIndex].entryType != EntryType.Node)
-                        {
-                            onlyNodesSelected = false;
-                            break;
-                        }
-                    }
-
                     bool gpuDataAvailable = false;
+                    bool allNodesHaveDefinitions = true;
+                    bool allNodesHaveParents = true;
                     for (int i = 0; i < count; i++)
                     {
-                        int entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text);
-                        if (cpuFile[entryIndex].gpuDataLength > 0)
+                        int entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text) - 1;
+                        if (!gpuDataAvailable && cpuFile[entryIndex].gpuDataLength > 0)
                         {
                             gpuDataAvailable = true;
+                        }
+                        if (allNodesHaveDefinitions && cpuFile[entryIndex].definitionId == 0)
+                        {
+                            allNodesHaveDefinitions = false;
+                        }
+                        if (allNodesHaveParents && cpuFile[entryIndex].parentId == 0)
+                        {
+                            allNodesHaveParents = false;
+                        }
+                        if (gpuDataAvailable && !allNodesHaveDefinitions && !allNodesHaveParents)
+                        {
                             break;
                         }
                     }
 
-                    ((ToolStripMenuItem)contextMenuStrip1.Items["editToolStripMenuItem"]).DropDownItems["changeDefinitionToolStripMenuItem"].Enabled =
-                        ((ToolStripMenuItem)contextMenuStrip1.Items["editToolStripMenuItem"]).DropDownItems["changeParentToolStripMenuItem"].Enabled = onlyNodesSelected;
+                    ((ToolStripMenuItem)contextMenuStrip1.Items["editToolStripMenuItem"]).DropDownItems["changeDefinitionToolStripMenuItem"].Enabled = allNodesHaveDefinitions;
+                    ((ToolStripMenuItem)contextMenuStrip1.Items["editToolStripMenuItem"]).DropDownItems["changeParentToolStripMenuItem"].Enabled = allNodesHaveParents;
 
                     ((ToolStripMenuItem)contextMenuStrip1.Items["saveToFileToolStripMenuItem"]).DropDownItems["gpuDataToolStripMenuItem"].Enabled =
                         ((ToolStripMenuItem)contextMenuStrip1.Items["saveToFileToolStripMenuItem"]).DropDownItems["bothToolStripMenuItem"].Enabled = gpuDataAvailable;
+
+
 
                     contextMenuStrip1.Items["pasteToolStripMenuItem"].Enabled = (GetDataFromClipboard() != null);
 
@@ -440,6 +465,102 @@ namespace CpuGpuTool
         private void BothToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SaveToFile(true, true);
+        }
+
+        private void RenameToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (DialogBoxTextEntry dialog = new DialogBoxTextEntry())
+            {
+                dialog.Text = "Choose a name";
+                dialog.textBox1.Text = listView1.FocusedItem.SubItems[2].Text;
+                dialog.button1.Text = "Confirm";
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    int count = listView1.SelectedItems.Count;
+                    for (int i = 0; i < count; i++)
+                    {
+                        cpuFile.ChangeEntryName(int.Parse(listView1.SelectedItems[i].Text) - 1, dialog.textBox1.Text);
+                    }
+                    cpuFile.Reload();
+                    RefreshCpuEntryList(true);
+                }
+            }
+        }
+
+        private void EntryIDToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            int entryIndex = int.Parse(listView1.FocusedItem.SubItems[0].Text) - 1;
+            using (DialogBoxTextEntry dialog = new DialogBoxTextEntry())
+            {
+                dialog.Text = "Choose an ID";
+                dialog.textBox1.Text = cpuFile[entryIndex].id.ToString("X8");
+                dialog.button1.Text = "Confirm";
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    if (ParseHexString(dialog.textBox1.Text, out uint id))
+                    {
+                        int count = listView1.SelectedItems.Count;
+                        for (int i = 0; i < count; i++)
+                        {
+                            cpuFile.ChangeEntryID(entryIndex, id);
+                        }
+                        cpuFile.Reload();
+                        RefreshDetailsText();
+                    }
+                }
+            }
+        }
+
+        private void ChangeDefinitionToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            int entryIndex = int.Parse(listView1.FocusedItem.SubItems[0].Text) - 1;
+            using (DialogBoxTextEntry dialog = new DialogBoxTextEntry())
+            {
+                dialog.Text = "Choose a definition ID";
+                dialog.textBox1.Text = cpuFile[entryIndex].definitionId.ToString("X8");
+                dialog.button1.Text = "Confirm";
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    if (ParseHexString(dialog.textBox1.Text, out uint id))
+                    {
+                        int count = listView1.SelectedItems.Count;
+                        for (int i = 0; i < count; i++)
+                        {
+                            cpuFile.ChangeDefinitionID(entryIndex, id);
+                        }
+                        cpuFile.Reload();
+                        RefreshDetailsText();
+                    }
+                }
+            }
+        }
+
+        private void ChangeParentToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            int entryIndex = int.Parse(listView1.FocusedItem.SubItems[0].Text) - 1;
+            using (DialogBoxTextEntry dialog = new DialogBoxTextEntry())
+            {
+                dialog.Text = "Choose a parent ID";
+                dialog.textBox1.Text = cpuFile[entryIndex].parentId.ToString("X8");
+                dialog.button1.Text = "Confirm";
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    if (ParseHexString(dialog.textBox1.Text, out uint id))
+                    {
+                        int count = listView1.SelectedItems.Count;
+                        for (int i = 0; i < count; i++)
+                        {
+                            cpuFile.ChangeParentID(entryIndex, id);
+                        }
+                        cpuFile.Reload();
+                        RefreshDetailsText();
+                    }
+                }
+            }
         }
     }
 }
