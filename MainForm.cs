@@ -480,6 +480,7 @@ namespace CpuGpuTool
                     int count = listView1.SelectedItems.Count;
                     for (int i = 0; i < count; i++)
                     {
+                        int entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text) - 1;
                         cpuFile.ChangeEntryName(int.Parse(listView1.SelectedItems[i].Text) - 1, dialog.textBox1.Text);
                     }
                     cpuFile.Reload();
@@ -504,6 +505,7 @@ namespace CpuGpuTool
                         int count = listView1.SelectedItems.Count;
                         for (int i = 0; i < count; i++)
                         {
+                            entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text) - 1;
                             cpuFile.ChangeEntryID(entryIndex, id);
                         }
                         cpuFile.Reload();
@@ -529,6 +531,7 @@ namespace CpuGpuTool
                         int count = listView1.SelectedItems.Count;
                         for (int i = 0; i < count; i++)
                         {
+                            entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text) - 1;
                             cpuFile.ChangeDefinitionID(entryIndex, id);
                         }
                         cpuFile.Reload();
@@ -554,6 +557,7 @@ namespace CpuGpuTool
                         int count = listView1.SelectedItems.Count;
                         for (int i = 0; i < count; i++)
                         {
+                            entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text) - 1;
                             cpuFile.ChangeParentID(entryIndex, id);
                         }
                         cpuFile.Reload();
