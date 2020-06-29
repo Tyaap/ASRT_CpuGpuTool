@@ -411,8 +411,8 @@ namespace CpuGpuTool
             for (int i = 0; i < count; i++)
             {
                 int entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text) - 1;
-                cpuFile.GetCpuData(entryIndex, cpuData);
-                cpuFile.GetGpuData(entryIndex, gpuData);
+                cpuFile.GetCpuData(entryIndex, cpuData, -1);
+                cpuFile.GetGpuData(entryIndex, gpuData, -1);
             }
             PutDataOnClipboard(new MemoryStream[] { cpuData, gpuData });
         }

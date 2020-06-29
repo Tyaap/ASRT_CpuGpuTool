@@ -171,10 +171,10 @@ namespace CpuGpuTool
             }
         }
 
-        public void GetCpuData(int entryIndex, Stream sOut)
+        public void GetCpuData(int entryIndex, Stream sOut, int outOffset = 0)
         {
             CpuEntry entry = entriesList[entryIndex];
-            BinaryTools.WriteData(cpuFilePath, sOut, entry.cpuRelativeOffsetNextEntry, entry.cpuOffsetDataHeader);
+            BinaryTools.WriteData(cpuFilePath, sOut, entry.cpuRelativeOffsetNextEntry, entry.cpuOffsetDataHeader, outOffset);
         }
 
         public void GetGpuData(int entryIndex, Stream sOut, int outOffset = 0)

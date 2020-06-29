@@ -52,8 +52,14 @@ namespace CpuGpuTool
 
         public static void WriteData(Stream sIn, Stream sOut, int length, int inOffset = 0, int outOffset = 0)
         {
-            sIn.Seek(inOffset, SeekOrigin.Begin);
-            sOut.Seek(outOffset, SeekOrigin.Begin);
+            if (inOffset != -1)
+            {
+                sIn.Seek(inOffset, SeekOrigin.Begin);
+            }
+            if (outOffset != -1)
+            {
+                sOut.Seek(outOffset, SeekOrigin.Begin);
+            }
             byte[] buffer = new byte[bufferSize];
             int pos = 0;
             while (pos < length)
