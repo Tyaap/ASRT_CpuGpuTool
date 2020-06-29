@@ -23,7 +23,6 @@ namespace CpuGpuTool
             listSelectTimer.Tick += delegate (object sender, EventArgs e)
             {
                 RefreshEntryStatus();
-                button2.Enabled = listView1.SelectedIndices.Count > 0;
                 listSelectTimer.Stop();
             };
         }
@@ -51,11 +50,11 @@ namespace CpuGpuTool
         private void RefreshCpuEntryList()
         {
             listView1.Items.Clear();
-            int count = cpuFile.entriesList.Count;
+            int count = cpuFile.Count;
             List<ListViewItem> items = new List<ListViewItem>();
             for (int i = 0; i < count; i++)
             {
-                CpuEntry entry = cpuFile.entriesList[i];
+                CpuEntry entry = cpuFile[i];
                 if (entry.name.Contains(nameFilter) && entry.dataType.GetDescription().Contains(typeFilter))
                 {
                     items.Add(new ListViewItem(new string[]
@@ -81,7 +80,7 @@ namespace CpuGpuTool
             int count = Math.Min(listView1.SelectedItems.Count, 100);
             for (int i = 0; i < count; i++)
             {
-                CpuEntry entry = cpuFile.entriesList[int.Parse(listView1.SelectedItems[i].Text) - 1];
+                CpuEntry entry = cpuFile[int.Parse(listView1.SelectedItems[i].Text) - 1];
                 ListViewItem item = listView1.SelectedItems[i];
 
                 details += string.Format("------------ ENTRY #{0} ------------", entry.entryNumber);
@@ -163,7 +162,7 @@ namespace CpuGpuTool
             }
             if (listView1.SelectedItems.Count == 0)
             {
-                details += "Please select a data entry.";
+                details += "Please select an entry.";
             }
             richTextBox1.Clear();
             richTextBox1.Text = details;
@@ -186,7 +185,7 @@ namespace CpuGpuTool
                 if (fileDialog.ShowDialog() == DialogResult.OK)
                 {
                     cpuFile = new CpuFile(fileDialog.FileName);
-                    toolStripStatusLabel1.Text = string.Format("Current file: {0} (Sumo tool v{2}, {1}-endian)", fileDialog.FileName, cpuFile.isLittleEndian ? "Little" : "Big", cpuFile.entriesList[0].toolVersion);
+                    toolStripStatusLabel1.Text = string.Format("Current file: {0} (Sumo tool v{2}, {1}-endian)", fileDialog.FileName, cpuFile.isLittleEndian ? "Little" : "Big", cpuFile[0].toolVersion);
                     RefreshCpuEntryList();
                     RefreshEntryStatus();
                     RefreshDetailsText();
@@ -235,7 +234,7 @@ namespace CpuGpuTool
             listSelectTimer.Start();
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private void SaveToFile(bool cpuData, bool gpuData)
         {
             using (FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog() { Description = "Choose an output folder", SelectedPath = lastDirectoryPath })
             {
@@ -247,15 +246,21 @@ namespace CpuGpuTool
                     for (int i = 0; i < count; i++)
                     {
                         int entryIndex = int.Parse(listView1.SelectedItems[i].Text) - 1;
-                        fileName = cpuFile.SaveCpuData(entryIndex, folderBrowserDialog.SelectedPath);
-                        if (fileName != null)
+                        if (cpuData)
                         {
-                            fileNames.Add(fileName);
+                            fileName = cpuFile.SaveCpuData(entryIndex, folderBrowserDialog.SelectedPath);
+                            if (fileName != null)
+                            {
+                                fileNames.Add(fileName);
+                            }
                         }
-                        fileName = cpuFile.SaveGpuData(entryIndex, folderBrowserDialog.SelectedPath);
-                        if (fileName != null)
+                        if (gpuData)
                         {
-                            fileNames.Add(fileName);
+                            fileName = cpuFile.SaveGpuData(entryIndex, folderBrowserDialog.SelectedPath);
+                            if (fileName != null)
+                            {
+                                fileNames.Add(fileName);
+                            }
                         }
                     }
                     using (InfoForm form = new InfoForm())
@@ -265,42 +270,6 @@ namespace CpuGpuTool
                     }
                     lastDirectoryPath = folderBrowserDialog.SelectedPath;
                 }
-            }
-        }
-
-        private void button3_Click(object sender, EventArgs e)
-        {
-            if (listView1.SelectedItems.Count == 1)
-            {
-                CpuEntry entry = cpuFile.entriesList[int.Parse(listView1.SelectedItems[0].Text) - 1];
-                using (OpenFileDialog fileDialog = new OpenFileDialog() { Multiselect = false, InitialDirectory = lastDirectoryPath })
-                {
-                    fileDialog.Title = "Select CPU data file";
-                    bool replaceCpuData = true;
-                    if (entry.entryType == EntryType.Resource)
-                    {
-                        replaceCpuData = MessageBox.Show("Replace CPU data?", "Replace Data", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;          
-                    }
-                    if (replaceCpuData && fileDialog.ShowDialog() == DialogResult.OK)
-                    {
-                        cpuFile.ReplaceCpuData(entry.entryNumber - 1, fileDialog.FileName);
-                        lastDirectoryPath = Path.GetDirectoryName(fileDialog.FileName);
-                    }
-                    fileDialog.Title = "Select GPU data file";
-                    if (entry.entryType == EntryType.Resource 
-                        && MessageBox.Show("Replace GPU data?", "Replace Data", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes
-                        && fileDialog.ShowDialog() == DialogResult.OK)
-                    {
-                        cpuFile.ReplaceGpuData(entry.entryNumber - 1, fileDialog.FileName);
-                        lastDirectoryPath = Path.GetDirectoryName(fileDialog.FileName);
-                    }
-                }
-                RefreshDetailsText();
-                RefreshCpuEntryList();
-            }
-            else
-            {
-                MessageBox.Show("Please select a single entry.", "Replace Data", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -330,17 +299,18 @@ namespace CpuGpuTool
             }
             if (uint.TryParse(idString, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out uint id))
             {
-                int index = cpuFile.entriesList.FindIndex(i => i.id == id);
-                if (index == -1)
+                if (!cpuFile.entriesDictionary.TryGetValue(id, out CpuEntry entry))
                 {
                     MessageBox.Show("Entry not found!\nIt may exist in a different CPU file.", "Entry not found!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
                 else
                 {
+                    var item = listView1.Items[entry.entryNumber - 1];
+                    int index = entry.entryNumber - 1;
                     listView1.SelectedItems.Clear();
-                    listView1.Items[index].Selected = true;
-                    listView1.Items[index].Focused = true;
-                    listView1.Items[index].EnsureVisible();
+                    item.Selected = true;
+                    item.Focused = true;
+                    item.EnsureVisible();
                     listView1.Select();
                 }
             }
@@ -348,6 +318,128 @@ namespace CpuGpuTool
             {
                 MessageBox.Show("Invalid ID!\nYou must enter a 32bit hex number.", "Invalid ID!", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void listView1_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                if (listView1.FocusedItem.Bounds.Contains(e.Location))
+                {
+                    int count = listView1.SelectedItems.Count;
+                    bool onlyNodesSelected = true;
+                    for (int i = 0; i < count; i++)
+                    {
+                        int entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text);
+                        if (cpuFile[entryIndex].entryType != EntryType.Node)
+                        {
+                            onlyNodesSelected = false;
+                            break;
+                        }
+                    }
+
+                    bool gpuDataAvailable = false;
+                    for (int i = 0; i < count; i++)
+                    {
+                        int entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text);
+                        if (cpuFile[entryIndex].gpuDataLength > 0)
+                        {
+                            gpuDataAvailable = true;
+                            break;
+                        }
+                    }
+
+                    ((ToolStripMenuItem)contextMenuStrip1.Items["editToolStripMenuItem"]).DropDownItems["changeDefinitionToolStripMenuItem"].Enabled =
+                        ((ToolStripMenuItem)contextMenuStrip1.Items["editToolStripMenuItem"]).DropDownItems["changeParentToolStripMenuItem"].Enabled = onlyNodesSelected;
+
+                    ((ToolStripMenuItem)contextMenuStrip1.Items["saveToFileToolStripMenuItem"]).DropDownItems["gpuDataToolStripMenuItem"].Enabled =
+                        ((ToolStripMenuItem)contextMenuStrip1.Items["saveToFileToolStripMenuItem"]).DropDownItems["bothToolStripMenuItem"].Enabled = gpuDataAvailable;
+
+                    contextMenuStrip1.Items["pasteToolStripMenuItem"].Enabled = (GetDataFromClipboard() != null);
+
+                    contextMenuStrip1.Show(Cursor.Position);
+                }
+            }
+        }
+
+        public void PutDataOnClipboard(MemoryStream[] data)
+        {
+            DataObject clipboardData = new DataObject();
+            clipboardData.SetData(typeof(MemoryStream[]), data);
+            Clipboard.SetDataObject(clipboardData, true);
+        }
+
+        public MemoryStream[] GetDataFromClipboard()
+        {
+            DataObject retrievedData = Clipboard.GetDataObject() as DataObject;
+            if (retrievedData == null || !retrievedData.GetDataPresent(typeof(MemoryStream[])))
+                return null;
+            return (MemoryStream[]) retrievedData.GetData(typeof(MemoryStream[]));
+        }
+
+        private void CopyToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MemoryStream cpuData = new MemoryStream();
+            MemoryStream gpuData = new MemoryStream();
+
+            int count = listView1.SelectedItems.Count;
+            for (int i = 0; i < count; i++)
+            {
+                int entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text) - 1;
+                cpuFile.GetCpuData(entryIndex, cpuData);
+                cpuFile.GetGpuData(entryIndex, gpuData);
+            }
+            PutDataOnClipboard(new MemoryStream[] { cpuData, gpuData });
+        }
+
+        private void PasteToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            int entryIndex = int.Parse(listView1.FocusedItem.SubItems[0].Text) - 1;
+            MemoryStream[] data = GetDataFromClipboard();
+            cpuFile.InsertCpuData(entryIndex, data[0]);
+            cpuFile.InsertGpuData(entryIndex, data[1]);
+            cpuFile.Reload();
+            RefreshCpuEntryList();
+            RefreshEntryStatus();
+            RefreshDetailsText();
+            RefreshDataTypeChoices();
+        }
+
+        private void DeleteToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            int count = listView1.SelectedItems.Count;
+            for (int i = count - 1; i >= 0; i--) // Process in reverse order, to ensure offsets do not change while modifying
+            {
+                int entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text) - 1;
+                cpuFile.DeleteCpuData(entryIndex);
+                cpuFile.DeleteGpuData(entryIndex);
+            }
+            cpuFile.Reload();
+            RefreshCpuEntryList();
+            RefreshEntryStatus();
+            RefreshDetailsText();
+            RefreshDataTypeChoices();
+        }
+
+        private void CutToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            CopyToolStripMenuItem_Click(sender, e);
+            DeleteToolStripMenuItem_Click(sender, e);
+        }
+
+        private void CpuDataToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveToFile(true, false);
+        }
+
+        private void GpuDataToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveToFile(false, true);
+        }
+
+        private void BothToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveToFile(true, true);
         }
     }
 }

@@ -32,14 +32,21 @@ namespace CpuGpuTool
             s.Write(bytes, 0, length + 1);
         }
 
-        public static void SaveData(string inFilePath, int offset, int length, string outFilePath)
+        public static void WriteData(string inFilePath, string outFilePath, int length, int inOffset = 0, int outOffset = 0)
         {
-            var handle = LongFile.CreateFileForWrite(outFilePath); // handle long paths
-            
-            using (FileStream fsIn = File.OpenRead(inFilePath))
-            using (FileStream fsOut = new FileStream(handle, FileAccess.Write))
+            using (FileStream fsIn = LongFile.GetFileStream(inFilePath))
+            using (FileStream fsOut = LongFile.Exists(outFilePath) ? 
+                LongFile.GetFileStream(outFilePath) : new FileStream(LongFile.CreateFileForWrite(outFilePath), FileAccess.Write))
             {
-                WriteData(fsIn, fsOut, length, offset);
+                WriteData(fsIn, fsOut, length, inOffset, outOffset);
+            }
+        }
+
+        public static void WriteData(string inFilePath, Stream sOut, int length, int inOffset = 0, int outOffset = 0)
+        {
+            using (FileStream fsIn = LongFile.GetFileStream(inFilePath))
+            {
+                WriteData(fsIn, sOut, length, inOffset, outOffset);
             }
         }
 
@@ -58,22 +65,46 @@ namespace CpuGpuTool
             }
         }
 
-        public static void ExpandStream(Stream s, int offset, int sizeChange)
+        public static void InsertData(Stream sIn, Stream sOut, int length, int inOffset = 0, int outOffset = 0)
+        {
+            ExpandStream(sOut, outOffset, length);
+            WriteData(sIn, sOut, length, inOffset, outOffset);
+        }
+
+        public static void ExpandStream(Stream s, int offset, int sizeIncrease)
         {
             byte[] buffer = new byte[bufferSize];
             int length = (int)s.Length;
             int pos = length;
             int to_read;
-            s.SetLength(length + sizeChange);
+            s.SetLength(length + sizeIncrease);
             while (pos > offset)
             {
                 to_read = Math.Min(bufferSize, pos - offset);
                 pos -= to_read;
                 s.Seek(pos, SeekOrigin.Begin);
                 s.Read(buffer, 0, to_read);
-                s.Seek(pos + sizeChange, SeekOrigin.Begin);
+                s.Seek(pos + sizeIncrease, SeekOrigin.Begin);
                 s.Write(buffer, 0, to_read);
             }
+        }
+
+        public static void ShrinkStream(Stream s, int offset, int sizeDecrease)
+        {
+            byte[] buffer = new byte[bufferSize];
+            int length = (int)s.Length;
+            int pos = offset;
+            int to_read;
+            while (pos < length)
+            {
+                to_read = Math.Min(bufferSize, length - pos); 
+                s.Seek(pos + sizeDecrease, SeekOrigin.Begin);
+                s.Read(buffer, 0, to_read);
+                s.Seek(pos, SeekOrigin.Begin);
+                s.Write(buffer, 0, to_read);
+                pos += to_read;
+            }
+            s.SetLength(length - sizeDecrease);
         }
     }
 }

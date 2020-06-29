@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
 using System.Windows.Forms;
 
 namespace CpuGpuTool
@@ -10,7 +11,7 @@ namespace CpuGpuTool
         public string cpuFilePath;
         public string gpuFilePath;
         public List<CpuEntry> entriesList;
-        public Dictionary<uint, CpuEntry> entriesDictionary; 
+        public Dictionary<uint, CpuEntry> entriesDictionary;
         public HashSet<DataType> usedDataTypes;
         public static readonly char[] invalidCharacters = { ':', '*', '?', '<', '>', '|' };
         public bool isLittleEndian;
@@ -27,6 +28,21 @@ namespace CpuGpuTool
             cpuFilePath = filePath;
             gpuFilePath = filePath.Replace(".cpu.", ".gpu.");
             (entriesList, entriesDictionary, usedDataTypes, isLittleEndian) = Parse(filePath);
+        }
+
+        public CpuEntry this[int index]
+        {
+            get => entriesList[index];
+        }
+
+        public CpuEntry this[uint id]
+        {
+            get => entriesDictionary[id];
+        }
+
+        public int Count
+        {
+            get => entriesList.Count;
         }
 
         public static (List<CpuEntry>, Dictionary<uint, CpuEntry>, HashSet<DataType>, bool) Parse(string filePath)
@@ -148,6 +164,70 @@ namespace CpuGpuTool
             return (entriesList, entriesDictionary, usedDataTypes, isLittleEndian);
         }
 
+        public void Reload()
+        {
+            if (!string.IsNullOrEmpty(cpuFilePath))
+            {
+                (entriesList, entriesDictionary, usedDataTypes, isLittleEndian) = Parse(cpuFilePath);
+            }
+        }
+
+        public void GetCpuData(int entryIndex, Stream sOut)
+        {
+            CpuEntry entry = entriesList[entryIndex];
+            BinaryTools.WriteData(cpuFilePath, sOut, entry.cpuRelativeOffsetNextEntry, entry.cpuOffsetDataHeader);
+        }
+
+        public void GetGpuData(int entryIndex, Stream sOut, int outOffset = 0)
+        {
+            CpuEntry entry = entriesList[entryIndex];
+            BinaryTools.WriteData(gpuFilePath, sOut, entry.gpuDataLength, entry.gpuOffsetData, outOffset);
+        }
+
+        public void InsertCpuData(int entryIndex, Stream sIn, int length = -1, int inOffset = 0)
+        {
+            if (length == -1)
+            {
+                length = (int)sIn.Length;
+            }
+            using (FileStream fsOut = File.Open(cpuFilePath, FileMode.Open))
+            {
+                CpuEntry entry = entriesList[entryIndex];
+                BinaryTools.InsertData(sIn, fsOut, length, inOffset, entry.cpuOffsetDataHeader + entry.cpuRelativeOffsetNextEntry);
+            }
+        }
+
+        public void InsertGpuData(int entryIndex, Stream sIn, int length = -1, int inOffset = 0)
+        {
+            if (length == -1)
+            {
+                length = (int)sIn.Length;
+            }
+            using (FileStream fsOut = File.Open(gpuFilePath, FileMode.Open))
+            {
+                CpuEntry entry = entriesList[entryIndex];
+                BinaryTools.InsertData(sIn, fsOut, length, inOffset, entry.gpuOffsetData + entry.gpuRelativeOffsetNextEntry);
+            }
+        }
+
+        public void DeleteCpuData(int entryIndex)
+        {
+            CpuEntry entry = entriesList[entryIndex];
+            using (FileStream fs = File.Open(cpuFilePath, FileMode.Open))
+            {
+                BinaryTools.ShrinkStream(fs, entry.cpuOffsetDataHeader, entry.cpuRelativeOffsetNextEntry);
+            }
+        }
+
+        public void DeleteGpuData(int entryIndex)
+        {
+            CpuEntry entry = entriesList[entryIndex];
+            using (FileStream fs = File.Open(gpuFilePath, FileMode.Open))
+            {
+                BinaryTools.ShrinkStream(fs, entry.gpuOffsetData, entry.gpuRelativeOffsetNextEntry);
+            }
+        }
+
         public string SaveCpuData(int entryIndex, string outFolderPath)
         {
             CpuEntry entry = entriesList[entryIndex];
@@ -156,8 +236,8 @@ namespace CpuGpuTool
                 string start = entry.entryNumber + "_CPU_";
                 string end = Path.GetFileName(ReplaceInvalidChars(entry.name));
                 string fileName = start + end.Substring(Math.Max(0, start.Length + end.Length - 255));
-                
-                BinaryTools.SaveData(cpuFilePath, entry.cpuOffsetDataHeader, entry.cpuRelativeOffsetNextEntry, Path.Combine(outFolderPath, fileName));
+
+                BinaryTools.WriteData(cpuFilePath, Path.Combine(outFolderPath, fileName), entry.cpuRelativeOffsetNextEntry, entry.cpuOffsetDataHeader);
                 return fileName;
             }
             else
@@ -172,7 +252,7 @@ namespace CpuGpuTool
             if (entry.gpuDataLength > 0)
             {
                 string fileName = string.Format("{0}_GPU_{1}", entry.entryNumber, Path.GetFileName(ReplaceInvalidChars(entry.name)));
-                BinaryTools.SaveData(gpuFilePath, entry.gpuOffsetData, entry.gpuDataLength, Path.Combine(outFolderPath, fileName));
+                BinaryTools.WriteData(gpuFilePath, Path.Combine(outFolderPath, fileName), entry.gpuDataLength, entry.gpuOffsetData);
                 return fileName;
             }
             else
