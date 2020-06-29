@@ -277,7 +277,7 @@
             this.comboBox1.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.Suggest;
             this.comboBox1.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
             this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Location = new System.Drawing.Point(4, 37);
+            this.comboBox1.Location = new System.Drawing.Point(4, 39);
             this.comboBox1.Margin = new System.Windows.Forms.Padding(4);
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(191, 25);
@@ -380,28 +380,28 @@
             // renameToolStripMenuItem
             // 
             this.renameToolStripMenuItem.Name = "renameToolStripMenuItem";
-            this.renameToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.renameToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
             this.renameToolStripMenuItem.Text = "Name";
             this.renameToolStripMenuItem.Click += new System.EventHandler(this.RenameToolStripMenuItem_Click);
             // 
             // entryIDToolStripMenuItem
             // 
             this.entryIDToolStripMenuItem.Name = "entryIDToolStripMenuItem";
-            this.entryIDToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.entryIDToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
             this.entryIDToolStripMenuItem.Text = "ID";
             this.entryIDToolStripMenuItem.Click += new System.EventHandler(this.EntryIDToolStripMenuItem_Click);
             // 
             // changeDefinitionToolStripMenuItem
             // 
             this.changeDefinitionToolStripMenuItem.Name = "changeDefinitionToolStripMenuItem";
-            this.changeDefinitionToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.changeDefinitionToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
             this.changeDefinitionToolStripMenuItem.Text = "Definition ID";
             this.changeDefinitionToolStripMenuItem.Click += new System.EventHandler(this.ChangeDefinitionToolStripMenuItem_Click);
             // 
             // changeParentToolStripMenuItem
             // 
             this.changeParentToolStripMenuItem.Name = "changeParentToolStripMenuItem";
-            this.changeParentToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.changeParentToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
             this.changeParentToolStripMenuItem.Text = "Parent ID";
             this.changeParentToolStripMenuItem.Click += new System.EventHandler(this.ChangeParentToolStripMenuItem_Click);
             // 
@@ -458,7 +458,7 @@
             this.cPUDataToolStripMenuItem2,
             this.cPUGPUDataToolStripMenuItem});
             this.insertToolStripMenuItem.Name = "insertToolStripMenuItem";
-            this.insertToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.insertToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
             this.insertToolStripMenuItem.Text = "CPU data";
             // 
             // cPUDataToolStripMenuItem2
@@ -478,7 +478,7 @@
             this.replaceToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.cPUDataToolStripMenuItem1});
             this.replaceToolStripMenuItem.Name = "replaceToolStripMenuItem";
-            this.replaceToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.replaceToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
             this.replaceToolStripMenuItem.Text = "GPU data";
             // 
             // cPUDataToolStripMenuItem1
@@ -493,7 +493,7 @@
             this.insertToolStripMenuItem1,
             this.replaceToolStripMenuItem1});
             this.bothToolStripMenuItem2.Name = "bothToolStripMenuItem2";
-            this.bothToolStripMenuItem2.Size = new System.Drawing.Size(180, 22);
+            this.bothToolStripMenuItem2.Size = new System.Drawing.Size(123, 22);
             this.bothToolStripMenuItem2.Text = "Both";
             // 
             // insertToolStripMenuItem1

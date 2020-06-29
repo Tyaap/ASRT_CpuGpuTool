@@ -180,7 +180,7 @@ namespace CpuGpuTool
         public void GetGpuData(int entryIndex, Stream sOut, int outOffset = 0)
         {
             CpuEntry entry = entriesList[entryIndex];
-            BinaryTools.WriteData(gpuFilePath, sOut, entry.gpuDataLength, entry.gpuOffsetData, outOffset);
+            BinaryTools.WriteData(gpuFilePath, sOut, entry.gpuRelativeOffsetNextEntry, entry.gpuOffsetData, outOffset);
         }
 
         public void InsertCpuData(int entryIndex, Stream sIn, int length = -1, int inOffset = 0)
