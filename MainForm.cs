@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace CpuGpuTool
@@ -128,70 +129,78 @@ namespace CpuGpuTool
 
                 if (node != null)
                 {
-                    if (node.definitionId != 0 || node.parentId != 0 || node.daughterIds.Count > 0 || node.instanceIds.Count > 0)
+                    if (node.definition != null || node.parent != null || node.daughters.Count > 0 || node.instances.Count > 0)
                     {
-                        details += "\n\n~~ Linked Entries ~~";
+                        details += "\n\n~~ Node Links ~~";
                     }
-                    if (node.definitionId != 0)
+                    if (node.definition != null)
                     {
-                        details += string.Format("\nDefinition node: {0:X8}", node.definitionId);
+                        details += string.Format("\nDefinition: {0:X8}", node.definition.id);
                         linkPositions.Add(details.Length - 8);
                     }
-                    if (node.parentId != 0)
+                    if (node.parent != null)
                     {
-                        details += string.Format("\nParent node: {0:X8}", node.parentId);
+                        details += string.Format("\nParent: {0:X8}", node.parent.id);
                         linkPositions.Add(details.Length - 8);
                     }
-                    if (node.daughterIds.Count == 1)
+                    if (node.daughters.Count == 1)
                     {
-                        details += string.Format("\nDaughter node: {0:X8}", node.daughterIds[0]);
+                        details += string.Format("\nDaughter: {0:X8}", node.daughters.GetEnumerator().Current.Value.id);
                         linkPositions.Add(details.Length - 8);
                     }
-                    if (node.daughterIds.Count > 1)
+                    if (node.daughters.Count > 1)
                     {
-                        details += string.Format("\nDaughter nodes:");
-                        int count2 = node.daughterIds.Count;
-                        for (int j = 0; j < count2; j++)
+                        details += string.Format("\nDaughters:");
+                        foreach (uint id in node.daughters.Keys)
                         {
-                            details += string.Format("\n     {0:X8}", node.daughterIds[j]);
+                            details += string.Format("\n     {0:X8}", id);
                             linkPositions.Add(details.Length - 8);
                         }
                     }
-                    if (node.instanceIds.Count == 1)
+                    if (node.instances.Count == 1)
                     {
-                        details += string.Format("\nInstance node: {0:X8}", node.instanceIds[0]);
+                        details += string.Format("\nInstance: {0:X8}", node.instances.GetEnumerator().Current.Value.id);                        
                         linkPositions.Add(details.Length - 8);
                     }
-                    if (node.instanceIds.Count > 1)
+                    if (node.instances.Count > 1)
                     {
-                        details += string.Format("\nInstance nodes:");
-                        int count2 = node.instanceIds.Count;
-                        for (int j = 0; j < count2; j++)
+                        details += string.Format("\nInstances:");
+                        int count2 = node.instances.Count;
+                        foreach(uint id in node.instances.Keys)
                         {
-                            details += string.Format("\n     {0:X8}", node.instanceIds[j]);
+                            details += string.Format("\n     {0:X8}", id);
                             linkPositions.Add(details.Length - 8);
                         }
                     }
-                    if (node.partenerResourceId != 0)
+                    if (node.partener != null || node.referencedResources.Count > 0)
                     {
-                        details += string.Format("\nPartener resource: {0:X8}", node.partenerResourceId);
+                        details += "\n\n~~ Resource References ~~";
+                    }
+                    if (node.partener != null)
+                    {
+                        details += string.Format("\nPartener: {0:X8}", node.partener.id);
                         linkPositions.Add(details.Length - 8);
                     }
+                    GetReferencesString(node, linkPositions, ref details);
                 }
-
                 if (resource != null)
                 {
-                    if (resource.partenerNodeId != 0)
+                    if (resource.referencedResources.Count > 0)
                     {
-                        details += "\n\n~~ Linked Entries ~~";
+                        details += "\n\n~~ Resource References ~~";
                     }
-                    if (resource.partenerNodeId != 0)
+                    GetReferencesString(resource, linkPositions, ref details);
+                    if (resource.partener != null || resource.referees.Count > 0)
                     {
-                        details += string.Format("\nPartener node: {0:X8}", resource.partenerNodeId);
+                        details += "\n\n~~ Referees ~~";
+                    }
+                    if (resource.partener != null)
+                    {
+                        details += string.Format("\nPartener node: {0:X8}", resource.partener.id);
                         linkPositions.Add(details.Length - 8);
                     }
+                    GetRefereesString(resource, linkPositions, ref details);
                 }
-                
                 if (i < count - 1)
                 {
                     details += "\n\n";
@@ -216,6 +225,62 @@ namespace CpuGpuTool
                 richTextBox1.Select(position, 8);
                 richTextBox1.SetSelectionLink(true);
                 richTextBox1.Select(position + 8, 0);
+            }
+        }
+
+        private void GetReferencesString(CpuEntry entry, List<int> linkPositions, ref string details)
+        {
+            if (entry.referencedResources.Count == 0)
+            {
+                return;
+            }
+            foreach (var resources in entry.referencedResources.Values.GroupBy(x => x.dataType))
+            {
+                /*
+                if (resources.Count() == 1)
+                {
+                    var tmp = resources.GetEnumerator().Current;
+                    details += string.Format("\n{0}: {1}", resources.Key, resources.GetEnumerator().Current.id);
+                    linkPositions.Add(details.Length - 8);
+                }
+                else
+                */
+                {
+                    details += string.Format("\n{0}:", resources.Key);
+                    foreach (Resource r in resources)
+                    {
+                        details += string.Format("\n     {0:X8}", r.id);
+                        linkPositions.Add(details.Length - 8);
+                    }
+                }
+            }
+        }
+
+        private void GetRefereesString(Resource resource, List<int> linkPositions, ref string details)
+        {
+            if (resource.referees.Count == 0)
+            {
+                return;
+            }
+            foreach (var resources in resource.referees.Values.GroupBy(x => x.dataType))
+            {
+                /*
+                if (resources.Count() == 1)
+                {
+                    var tmp = resources.GetEnumerator().Current;
+                    details += string.Format("\n{0}: {1}", resources.Key, resources.GetEnumerator().Current.id);
+                    linkPositions.Add(details.Length - 8);
+                }
+                else
+                */
+                {
+                    details += string.Format("\n{0}:", resources.Key);
+                    foreach (Resource r in resources)
+                    {
+                        details += string.Format("\n     {0:X8}", r.id);
+                        linkPositions.Add(details.Length - 8);
+                    }
+                }
             }
         }
 
@@ -313,7 +378,7 @@ namespace CpuGpuTool
 
         private void richTextBox1_LinkClicked(object sender, LinkClickedEventArgs e)
         {
-            SelectEntryByID(e.LinkText, EntryType.Node);
+            SelectEntryByID(e.LinkText);
         }
 
         private void button4_Click(object sender, EventArgs e)
@@ -351,7 +416,7 @@ namespace CpuGpuTool
             return uint.TryParse(idString, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out id);
         }
 
-        private void SelectEntryByID(string idString, EntryType type)
+        private void SelectEntryByID(string idString, EntryType type = (EntryType)3) // Default search type: nodes + resources
         {
             if (!ParseHexString(idString, out uint id))
             {
@@ -359,26 +424,42 @@ namespace CpuGpuTool
                 return;
             }
             CpuEntry entry;
-            if (type == EntryType.Node)
+            switch (type)
             {
-                if (!cpuFile.nodeDictionary.TryGetValue(id, out Node node))
-                {
-                    MessageBox.Show("Node not found!\nIt may exist in a different CPU file.",
-                    "Not found!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-                entry = node;
-            }
-            else
-            {
-                if (!cpuFile.resourceDictionary.TryGetValue(id, out Resource resource))
-                {
-                    MessageBox.Show("Resource not found!\nIt may exist in a different CPU file.",
+                case EntryType.Node:
+                    if (!cpuFile.nodeDictionary.TryGetValue(id, out Node node))
+                    {
+                        MessageBox.Show("Node not found!\nIt may exist in a different CPU file.",
                         "Not found!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                        
-                }
-                entry = resource;
+                        return;
+                    }
+                    entry = node;
+                    break;
+                case EntryType.Resource:
+                    if (!cpuFile.resourceDictionary.TryGetValue(id, out Resource resource))
+                    {
+                        MessageBox.Show("Resource not found!\nIt may exist in a different CPU file.",
+                            "Not found!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    entry = resource;
+                    break;
+                default:
+                    if (cpuFile.nodeDictionary.TryGetValue(id, out node))
+                    {
+                        entry = node;
+                    }
+                    else if (cpuFile.resourceDictionary.TryGetValue(id, out resource))
+                    {
+                        entry = resource;
+                    }
+                    else
+                    {
+                        MessageBox.Show("Entry not found!\nIt may exist in a different CPU file.",
+                            "Not found!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    break;
             }
 
             // Clear other searches
@@ -394,6 +475,7 @@ namespace CpuGpuTool
             item.Focused = true;
             item.EnsureVisible();
             listView1.Select();
+            return;
         }
 
         private void listView1_MouseClick(object sender, MouseEventArgs e)
@@ -415,11 +497,11 @@ namespace CpuGpuTool
                         }
 
                         Node node = cpuFile[entryIndex] as Node;
-                        if (allNodesHaveDefinitions && (node == null || node.definitionId == 0))
+                        if (allNodesHaveDefinitions && (node == null || node.definition == null))
                         {
                             allNodesHaveDefinitions = false;
                         }
-                        if (allNodesHaveParents && (node == null || node.parentId == 0))
+                        if (allNodesHaveParents && (node == null || node.parent == null))
                         {
                             allNodesHaveParents = false;
                         }
@@ -578,7 +660,7 @@ namespace CpuGpuTool
             using (DialogBoxTextEntry dialog = new DialogBoxTextEntry())
             {
                 dialog.Text = "Choose a definition ID";
-                dialog.textBox1.Text = ((Node)cpuFile[entryIndex]).definitionId.ToString("X8");
+                dialog.textBox1.Text = (cpuFile[entryIndex] as Node).definition.id.ToString("X8");
                 dialog.button1.Text = "Confirm";
 
                 if (dialog.ShowDialog() == DialogResult.OK)
@@ -604,7 +686,7 @@ namespace CpuGpuTool
             using (DialogBoxTextEntry dialog = new DialogBoxTextEntry())
             {
                 dialog.Text = "Choose a parent ID";
-                dialog.textBox1.Text = ((Node)cpuFile[entryIndex]).parentId.ToString("X8");
+                dialog.textBox1.Text = (cpuFile[entryIndex] as Node).parent.id.ToString("X8");
                 dialog.button1.Text = "Confirm";
 
                 if (dialog.ShowDialog() == DialogResult.OK)

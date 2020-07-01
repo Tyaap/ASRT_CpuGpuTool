@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace CpuGpuTool
@@ -80,7 +81,9 @@ namespace CpuGpuTool
                     {
                         Resource resource = new Resource(entry);
                         entry = resource;
+
                         resource.id = b.ReadUInt32();
+                        resourceDictionary[resource.id] = resource;
 
                         if (resource.dataType != DataType.SlResourceCollision)
                         {
@@ -90,24 +93,60 @@ namespace CpuGpuTool
                         {
                             b.BaseStream.Seek(entry.cpuOffsetData + 0x20, SeekOrigin.Begin);
                             tmpOffset = 0x30 + b.ReadInt32() * 0x14;
-                        }
-                        
+                        }         
                         if (tmpOffset != 0)
                         {
                             b.BaseStream.Seek(entry.cpuOffsetData + tmpOffset, SeekOrigin.Begin);
                             resource.name = BinaryTools.ReadString(b.BaseStream);
                         }
-                        resourceDictionary[entry.id] = resource;
+                        switch (resource.dataType)
+                        {
+                            case DataType.SlMaterial2:
+                                b.BaseStream.Seek(entry.cpuOffsetData + 0xC, SeekOrigin.Begin);
+                                // shader
+                                uint id = b.ReadUInt32();
+                                resource.referencedResources[id] = new Resource() { id = id, dataType = DataType.SlShader };
+                                // textures
+                                for (int j = 0; j < 9; j++)
+                                {
+                                    if (j == 1)
+                                    {
+                                        continue;
+                                    }
+                                    b.BaseStream.Seek(resource.cpuOffsetData + 0x24 + j * 4, SeekOrigin.Begin);
+                                    int offset = b.ReadInt32();
+                                    if (offset == 0)
+                                    {
+                                        continue;
+                                    }
+                                    b.BaseStream.Seek(resource.cpuOffsetData + offset + 0xC, SeekOrigin.Begin);
+                                    id = b.ReadUInt32();
+                                    resource.referencedResources[id] = new Resource() { id = id, dataType = DataType.SlTexture };
+                                }
+                                // cbdesc
+                                for (int j = 0; j < 9; j++)
+                                {
+                                    b.BaseStream.Seek(resource.cpuOffsetData + 0x50 + j * 4, SeekOrigin.Begin);
+                                    int offset = b.ReadInt32();
+                                    if (offset == 0)
+                                    {
+                                        continue;
+                                    }
+                                    b.BaseStream.Seek(resource.cpuOffsetData + offset + 0xC, SeekOrigin.Begin);
+                                    id = b.ReadUInt32();
+                                    resource.referencedResources[id] = new Resource() { id = id, dataType = DataType.SlConstantBufferDesc };
+                                }
+                                break;
+                        }
                     }
                     else
                     {
                         Node node = new Node(entry);
                         entry = node;
-                        node.daughterIds = new List<uint>();
-                        node.instanceIds = new List<uint>();
 
                         b.BaseStream.Seek(entry.cpuOffsetData + 0x14, SeekOrigin.Begin);
-                        entry.id = b.ReadUInt32();
+                        node.id = b.ReadUInt32();
+                        nodeDictionary[node.id] = node;
 
                         b.BaseStream.Seek(entry.cpuOffsetData + 0x1C, SeekOrigin.Begin);
                         tmpOffset = b.ReadInt32();
@@ -116,7 +155,6 @@ namespace CpuGpuTool
                             b.BaseStream.Seek(entry.cpuOffsetData + tmpOffset, SeekOrigin.Begin);
                             node.name = BinaryTools.ReadString(b.BaseStream);
                         }
-
                         b.BaseStream.Seek(entry.cpuOffsetData + 0x24, SeekOrigin.Begin);
                         tmpOffset = b.ReadInt32();
                         if (tmpOffset != 0)
@@ -124,27 +162,23 @@ namespace CpuGpuTool
                             b.BaseStream.Seek(entry.cpuOffsetData + tmpOffset, SeekOrigin.Begin);
                             node.shortName = BinaryTools.ReadString(b.BaseStream);
                         }
-
                         b.BaseStream.Seek(entry.cpuOffsetData + 0x40, SeekOrigin.Begin);
                         tmpOffset = b.ReadInt32();
                         if (tmpOffset != 0)
                         {
                             b.BaseStream.Seek(entry.cpuOffsetData + tmpOffset, SeekOrigin.Begin);
-                            node.parentId = b.ReadUInt32();
+                            node.parent = new Node() { id = b.ReadUInt32() };
                         }
-
                         b.BaseStream.Seek(entry.cpuOffsetData + 0x68, SeekOrigin.Begin);
                         tmpOffset = b.ReadInt32();
                         if (tmpOffset != 0)
                         {
                             b.BaseStream.Seek(entry.cpuOffsetData + tmpOffset, SeekOrigin.Begin);
-                            node.definitionId = b.ReadUInt32();
+                            node.definition = new Node() { id = b.ReadUInt32() };
                         }
-                        nodeDictionary[entry.id] = node;
                     }
 
                     cpuOffset += entry.cpuRelativeOffsetNextEntry;
-
                     b.BaseStream.Seek(cpuOffset + 8, SeekOrigin.Begin);
                     entry.cpuOffsetPointersHeader = cpuOffset;
                     entry.cpuOffsetPointers = cpuOffset + 0x20;
@@ -161,18 +195,34 @@ namespace CpuGpuTool
             foreach (var pair in nodeDictionary)
             {
                 Node node = pair.Value;
-                if (node.parentId != 0 && nodeDictionary.TryGetValue(node.parentId, out Node parent))
+                if (node.parent != null && nodeDictionary.TryGetValue(node.parent.id, out Node parent))
                 {
-                    parent.daughterIds.Add(node.id);
+                    node.parent = parent;
+                    parent.daughters[node.id] = node;    
                 }
-                if (node.definitionId != 0 && nodeDictionary.TryGetValue(node.definitionId, out Node definition))
+                if (node.definition != null && nodeDictionary.TryGetValue(node.definition.id, out Node definition))
                 {
-                    definition.instanceIds.Add(node.id);
+                    node.definition = definition;
+                    definition.instances[node.id] = node;
                 }
                 if (resourceDictionary.TryGetValue(node.id, out Resource resource))
                 {
-                    node.partenerResourceId = resource.id;
-                    resource.partenerNodeId = node.id;
+                    node.partener = resource;
+                    resource.partener = node;
+                }
+            }
+
+            
+            foreach (CpuEntry entry in entriesList)
+            {
+                List<uint> ids = new List<uint>(entry.referencedResources.Keys);
+                foreach (uint id in ids)
+                {
+                    if(resourceDictionary.TryGetValue(id, out Resource foundResource))
+                    {
+                        entry.referencedResources[id] = foundResource;
+                        foundResource.referees[entry.id] = entry;
+                    }
                 }
             }
 

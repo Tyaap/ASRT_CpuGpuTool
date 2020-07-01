@@ -20,10 +20,23 @@ namespace CpuGpuTool
         public int unknown;
         public string name;
         public uint id;
+        public Dictionary<uint, Resource> referencedResources = new Dictionary<uint, Resource>();
+
+        public override int GetHashCode()
+        {
+            return (int)id;
+        }
+
+        public override bool Equals(object obj)
+        {
+            CpuEntry entry = obj as CpuEntry;
+            return entry != null && entry.id == id;
+        }
     }
 
     public class Node : CpuEntry
     {
+        public Node() { }
         public Node(CpuEntry entry)
         {
             entryNumber = entry.entryNumber;
@@ -45,15 +58,16 @@ namespace CpuGpuTool
         }
 
         public string shortName;
-        public uint definitionId;
-        public uint parentId;
-        public List<uint> daughterIds;
-        public List<uint> instanceIds;
-        public uint partenerResourceId;
+        public Node definition;
+        public Node parent;
+        public Dictionary<uint, Node> daughters = new Dictionary<uint, Node>();
+        public Dictionary<uint, Node> instances = new Dictionary<uint, Node>();
+        public Resource partener;
     }
 
     public class Resource : CpuEntry
     {
+        public Resource() { }
         public Resource(CpuEntry entry)
         {
             entryNumber = entry.entryNumber;
@@ -74,6 +88,7 @@ namespace CpuGpuTool
             id = entry.id;
         }
 
-        public uint partenerNodeId;
+        public Node partener;
+        public Dictionary<uint, CpuEntry> referees = new Dictionary<uint, CpuEntry>();
     }
 }
