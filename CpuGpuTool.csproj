@@ -103,7 +103,7 @@
     <Compile Include="RichTextBoxEx.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Structs.cs" />
+    <Compile Include="CpuEntry.cs" />
     <EmbeddedResource Include="DialogBoxTextEntry.resx">
       <DependentUpon>DialogBoxTextEntry.cs</DependentUpon>
     </EmbeddedResource>

@@ -101,16 +101,18 @@ namespace CpuGpuTool
             for (int i = 0; i < count; i++)
             {
                 CpuEntry entry = cpuFile[int.Parse(listView1.SelectedItems[i].Text) - 1];
+                Node node = entry as Node;
+                Resource resource = entry as Resource;
                 ListViewItem item = listView1.SelectedItems[i];
 
                 details += string.Format("------------ ENTRY #{0} ------------", entry.entryNumber);
-                details += entry.entryType == EntryType.Node ? "\nSumo Engine Node" : "\nSumo Loader Resource";
+                details += (node != null) ? "\nSumo Engine Node" : "\nSumo Loader Resource";
                 details += string.Format("\nType: {0} ({0:X})", entry.dataType);
                 details += string.Format("\nEntry ID: {0:X8}", entry.id);
                 details += string.Format("\nName: {0}", entry.name, entry.id);
-                if (!string.IsNullOrEmpty(entry.shortName))
+                if (node != null && !string.IsNullOrEmpty(node.shortName))
                 {
-                    details += string.Format("\nShort name: {0}", entry.shortName, entry.id);
+                    details += string.Format("\nShort name: {0}", node.shortName, entry.id);
                 }
 
                 details += "\n\n~~ File Offsets ~~";
@@ -124,53 +126,72 @@ namespace CpuGpuTool
                     entry.gpuOffsetData, entry.gpuDataLength);
                 }
 
-                if (entry.definitionId != 0 || entry.parentId != 0 || entry.daughterIds.Count > 0 || entry.instanceIds.Count > 0)
+                if (node != null)
                 {
-                    details += "\n\n~~ Linked Nodes ~~";
-                }
-                if (entry.definitionId != 0)
-                {
-                    details += string.Format("\nDefinition: {0:X8}", entry.definitionId);
-                    linkPositions.Add(details.Length - 8);
-                }
-                if (entry.parentId != 0)
-                {
-                    details += string.Format("\nParent: {0:X8}", entry.parentId);
-                    linkPositions.Add(details.Length - 8);
-                }
-
-                if (entry.daughterIds.Count == 1)
-                {
-                    details += string.Format("\nDaughter: {0:X8}", entry.daughterIds[0]);
-                    linkPositions.Add(details.Length - 8);
-                }
-                if (entry.daughterIds.Count > 1)
-                {
-                    details += string.Format("\nDaughters:");
-                    int count2 = entry.daughterIds.Count;
-                    for (int j = 0; j < count2; j++)
+                    if (node.definitionId != 0 || node.parentId != 0 || node.daughterIds.Count > 0 || node.instanceIds.Count > 0)
                     {
-                        details += string.Format("\n     {0:X8}", entry.daughterIds[j]);
+                        details += "\n\n~~ Linked Entries ~~";
+                    }
+                    if (node.definitionId != 0)
+                    {
+                        details += string.Format("\nDefinition node: {0:X8}", node.definitionId);
+                        linkPositions.Add(details.Length - 8);
+                    }
+                    if (node.parentId != 0)
+                    {
+                        details += string.Format("\nParent node: {0:X8}", node.parentId);
+                        linkPositions.Add(details.Length - 8);
+                    }
+                    if (node.daughterIds.Count == 1)
+                    {
+                        details += string.Format("\nDaughter node: {0:X8}", node.daughterIds[0]);
+                        linkPositions.Add(details.Length - 8);
+                    }
+                    if (node.daughterIds.Count > 1)
+                    {
+                        details += string.Format("\nDaughter nodes:");
+                        int count2 = node.daughterIds.Count;
+                        for (int j = 0; j < count2; j++)
+                        {
+                            details += string.Format("\n     {0:X8}", node.daughterIds[j]);
+                            linkPositions.Add(details.Length - 8);
+                        }
+                    }
+                    if (node.instanceIds.Count == 1)
+                    {
+                        details += string.Format("\nInstance node: {0:X8}", node.instanceIds[0]);
+                        linkPositions.Add(details.Length - 8);
+                    }
+                    if (node.instanceIds.Count > 1)
+                    {
+                        details += string.Format("\nInstance nodes:");
+                        int count2 = node.instanceIds.Count;
+                        for (int j = 0; j < count2; j++)
+                        {
+                            details += string.Format("\n     {0:X8}", node.instanceIds[j]);
+                            linkPositions.Add(details.Length - 8);
+                        }
+                    }
+                    if (node.partenerResourceId != 0)
+                    {
+                        details += string.Format("\nPartener resource: {0:X8}", node.partenerResourceId);
                         linkPositions.Add(details.Length - 8);
                     }
                 }
 
-                if (entry.instanceIds.Count == 1)
+                if (resource != null)
                 {
-                    details += string.Format("\nInstance: {0:X8}", entry.instanceIds[0]);
-                    linkPositions.Add(details.Length - 8);
-                }
-                if (entry.instanceIds.Count > 1)
-                {
-                    details += string.Format("\nInstances:");
-                    int count2 = entry.instanceIds.Count;
-                    for (int j = 0; j < count2; j++)
+                    if (resource.partenerNodeId != 0)
                     {
-                        details += string.Format("\n     {0:X8}", entry.instanceIds[j]);
+                        details += "\n\n~~ Linked Entries ~~";
+                    }
+                    if (resource.partenerNodeId != 0)
+                    {
+                        details += string.Format("\nPartener node: {0:X8}", resource.partenerNodeId);
                         linkPositions.Add(details.Length - 8);
                     }
                 }
-
+                
                 if (i < count - 1)
                 {
                     details += "\n\n";
@@ -211,6 +232,7 @@ namespace CpuGpuTool
                     RefreshDetailsText();
                     RefreshDataTypeChoices();
                     lastDirectoryPath = Path.GetDirectoryName(fileDialog.FileName);
+                    button2.Enabled = button4.Enabled = textBox1.Enabled = comboBox1.Enabled = true;
                 }
             }
         }
@@ -291,18 +313,31 @@ namespace CpuGpuTool
 
         private void richTextBox1_LinkClicked(object sender, LinkClickedEventArgs e)
         {
-            SelectEntryByID(e.LinkText);
+            SelectEntryByID(e.LinkText, EntryType.Node);
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
             using (DialogBoxTextEntry dialog = new DialogBoxTextEntry())
             {
-                dialog.Text = "Enter an ID";
+                dialog.Text = "Enter a node ID";
                 dialog.button1.Text = "Search";
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
-                    SelectEntryByID(dialog.textBox1.Text);
+                    SelectEntryByID(dialog.textBox1.Text, EntryType.Node);
+                }
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            using (DialogBoxTextEntry dialog = new DialogBoxTextEntry())
+            {
+                dialog.Text = "Enter a resource ID";
+                dialog.button1.Text = "Search";
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    SelectEntryByID(dialog.textBox1.Text, EntryType.Resource);
                 }
             }
         }
@@ -316,29 +351,49 @@ namespace CpuGpuTool
             return uint.TryParse(idString, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out id);
         }
 
-        private void SelectEntryByID(string idString)
+        private void SelectEntryByID(string idString, EntryType type)
         {
-            if (ParseHexString(idString, out uint id))
+            if (!ParseHexString(idString, out uint id))
             {
-                if (!cpuFile.entriesDictionary.TryGetValue(id, out CpuEntry entry))
+                MessageBox.Show("Invalid ID!\nYou must enter a 32bit hex number.", "Invalid ID!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            CpuEntry entry;
+            if (type == EntryType.Node)
+            {
+                if (!cpuFile.nodeDictionary.TryGetValue(id, out Node node))
                 {
-                    MessageBox.Show("Entry not found!\nIt may exist in a different CPU file.", "Entry not found!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Node not found!\nIt may exist in a different CPU file.",
+                    "Not found!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
                 }
-                else
-                {
-                    var item = listView1.Items[entry.entryNumber - 1];
-                    int index = entry.entryNumber - 1;
-                    listView1.SelectedItems.Clear();
-                    item.Selected = true;
-                    item.Focused = true;
-                    item.EnsureVisible();
-                    listView1.Select();
-                }
+                entry = node;
             }
             else
             {
-                MessageBox.Show("Invalid ID!\nYou must enter a 32bit hex number.", "Invalid ID!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (!cpuFile.resourceDictionary.TryGetValue(id, out Resource resource))
+                {
+                    MessageBox.Show("Resource not found!\nIt may exist in a different CPU file.",
+                        "Not found!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                        
+                }
+                entry = resource;
             }
+
+            // Clear other searches
+            typeFilter = "";
+            nameFilter = "";
+            RefreshCpuEntryList();
+            RefreshEntryStatus();
+
+            var item = listView1.Items[entry.entryNumber - 1];
+            int index = entry.entryNumber - 1;
+            listView1.SelectedItems.Clear();
+            item.Selected = true;
+            item.Focused = true;
+            item.EnsureVisible();
+            listView1.Select();
         }
 
         private void listView1_MouseClick(object sender, MouseEventArgs e)
@@ -358,11 +413,13 @@ namespace CpuGpuTool
                         {
                             gpuDataAvailable = true;
                         }
-                        if (allNodesHaveDefinitions && cpuFile[entryIndex].definitionId == 0)
+
+                        Node node = cpuFile[entryIndex] as Node;
+                        if (allNodesHaveDefinitions && (node == null || node.definitionId == 0))
                         {
                             allNodesHaveDefinitions = false;
                         }
-                        if (allNodesHaveParents && cpuFile[entryIndex].parentId == 0)
+                        if (allNodesHaveParents && (node == null || node.parentId == 0))
                         {
                             allNodesHaveParents = false;
                         }
@@ -521,7 +578,7 @@ namespace CpuGpuTool
             using (DialogBoxTextEntry dialog = new DialogBoxTextEntry())
             {
                 dialog.Text = "Choose a definition ID";
-                dialog.textBox1.Text = cpuFile[entryIndex].definitionId.ToString("X8");
+                dialog.textBox1.Text = ((Node)cpuFile[entryIndex]).definitionId.ToString("X8");
                 dialog.button1.Text = "Confirm";
 
                 if (dialog.ShowDialog() == DialogResult.OK)
@@ -547,7 +604,7 @@ namespace CpuGpuTool
             using (DialogBoxTextEntry dialog = new DialogBoxTextEntry())
             {
                 dialog.Text = "Choose a parent ID";
-                dialog.textBox1.Text = cpuFile[entryIndex].parentId.ToString("X8");
+                dialog.textBox1.Text = ((Node)cpuFile[entryIndex]).parentId.ToString("X8");
                 dialog.button1.Text = "Confirm";
 
                 if (dialog.ShowDialog() == DialogResult.OK)
