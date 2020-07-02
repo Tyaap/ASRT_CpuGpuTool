@@ -48,13 +48,16 @@ namespace CpuGpuTool
             comboBox1.Items.AddRange(items);
         }
 
-        private void RefreshCpuEntryList(bool keepSelectedItems = false)
+        private void RefreshCpuEntryList(bool keepSelectedItems = false, bool keepFocusedItem = false)
         {
             int[] selectedIndices = null;
             int focusedItemIndex = 0;
-            if (keepSelectedItems)
+            if (keepFocusedItem)
             {
                 focusedItemIndex = listView1.FocusedItem.Index;
+            }
+            if (keepSelectedItems)
+            {
                 selectedIndices = new int[listView1.SelectedIndices.Count];
                 listView1.SelectedIndices.CopyTo(selectedIndices, 0);
             }
@@ -77,13 +80,21 @@ namespace CpuGpuTool
             }
             AddListViewItems(listView1, items.ToArray());
 
+            int total = listView1.Items.Count;
             if (keepSelectedItems)
             {
                 count = selectedIndices.Length;
                 for (int i = 0; i < count; i++)
                 {
-                    listView1.Items[selectedIndices[i]].Selected = true;
+                    if (selectedIndices[i] < total)
+                    {
+                        listView1.Items[selectedIndices[i]].Selected = true;
+                    }
                 }
+            }
+            if (keepFocusedItem && focusedItemIndex < total)
+            {
+                listView1.Items[focusedItemIndex].Selected = true;
                 listView1.Items[focusedItemIndex].Focused = true;
                 listView1.Items[focusedItemIndex].EnsureVisible();
             }
@@ -104,7 +115,6 @@ namespace CpuGpuTool
                 CpuEntry entry = cpuFile[int.Parse(listView1.SelectedItems[i].Text) - 1];
                 Node node = entry as Node;
                 Resource resource = entry as Resource;
-                ListViewItem item = listView1.SelectedItems[i];
 
                 details += string.Format("------------ ENTRY #{0} ------------", entry.entryNumber);
                 details += (node != null) ? "\nSumo Engine Node" : "\nSumo Loader Resource";
@@ -543,7 +553,7 @@ namespace CpuGpuTool
             cpuFile.InsertCpuData(entryIndex, data[0]);
             cpuFile.InsertGpuData(entryIndex, data[1]);
             cpuFile.Reload();
-            RefreshCpuEntryList();
+            RefreshCpuEntryList(false, true);
             RefreshEntryStatus();
             RefreshDetailsText();
             RefreshDataTypeChoices();
