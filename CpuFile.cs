@@ -22,11 +22,11 @@ namespace CpuGpuTool
         {
             cpuFilePath = "";
             gpuFilePath = "";
+            msCpuFile = new MemoryStream();
+            msGpuFile = new MemoryStream();
             entriesList = new List<CpuEntry>();
             nodeDictionary = new Dictionary<uint, Node>();
             resourceDictionary = new Dictionary<uint, Resource>();
-            msCpuFile = new MemoryStream();
-            msGpuFile = new MemoryStream();
         }
         public CpuFile(string filePath)
         {
@@ -287,13 +287,13 @@ namespace CpuGpuTool
         public void GetCpuData(int entryIndex, Stream sOut, int outOffset = 0)
         {
             CpuEntry entry = entriesList[entryIndex];
-            BinaryTools.WriteData(cpuFilePath, sOut, entry.cpuRelativeOffsetNextEntry, entry.cpuOffsetDataHeader, outOffset);
+            BinaryTools.WriteData(msCpuFile, sOut, entry.cpuRelativeOffsetNextEntry, entry.cpuOffsetDataHeader, outOffset);
         }
 
         public void GetGpuData(int entryIndex, Stream sOut, int outOffset = 0)
         {
             CpuEntry entry = entriesList[entryIndex];
-            BinaryTools.WriteData(gpuFilePath, sOut, entry.gpuRelativeOffsetNextEntry, entry.gpuOffsetData, outOffset);
+            BinaryTools.WriteData(msGpuFile, sOut, entry.gpuRelativeOffsetNextEntry, entry.gpuOffsetData, outOffset);
         }
 
         public void InsertCpuData(int entryIndex, Stream sIn, int length = -1, int inOffset = 0)

@@ -63,7 +63,7 @@ namespace CpuGpuTool
         {
             if (length == -1)
             {
-                length = (int)sIn.Length - (inOffset != -1 ? inOffset : 0);
+                length = (int)sIn.Length - (inOffset == -1 ? 0 : inOffset);
             }
             if (inOffset != -1)
             {
