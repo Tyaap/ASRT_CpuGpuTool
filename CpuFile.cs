@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Windows.Forms;
+using System.Text;
 
 namespace CpuGpuTool
 {
@@ -10,6 +9,8 @@ namespace CpuGpuTool
     {
         public string cpuFilePath;
         public string gpuFilePath;
+        public MemoryStream msCpuFile;
+        public MemoryStream msGpuFile;
         public List<CpuEntry> entriesList;
         public Dictionary<uint, Node> nodeDictionary;
         public Dictionary<uint, Resource> resourceDictionary;
@@ -24,12 +25,18 @@ namespace CpuGpuTool
             entriesList = new List<CpuEntry>();
             nodeDictionary = new Dictionary<uint, Node>();
             resourceDictionary = new Dictionary<uint, Resource>();
+            msCpuFile = new MemoryStream();
+            msGpuFile = new MemoryStream();
         }
         public CpuFile(string filePath)
         {
             cpuFilePath = filePath;
             gpuFilePath = filePath.Replace(".cpu.", ".gpu.");
-            (entriesList, resourceDictionary, nodeDictionary, usedDataTypes, isLittleEndian) = Parse(filePath);
+            msCpuFile = new MemoryStream();
+            msGpuFile = new MemoryStream();
+            BinaryTools.WriteData(cpuFilePath, msCpuFile);
+            BinaryTools.WriteData(gpuFilePath, msGpuFile);
+            Parse(msCpuFile, out entriesList, out resourceDictionary, out nodeDictionary, out usedDataTypes, out isLittleEndian);
         }
 
         public CpuEntry this[int index]
@@ -42,14 +49,20 @@ namespace CpuGpuTool
             get => entriesList.Count;
         }
 
-        public static (List<CpuEntry>, Dictionary<uint, Resource>, Dictionary<uint, Node>, HashSet<DataType>, bool) Parse(string filePath)
+        public static void Parse(
+            Stream sCpuFile, 
+            out List<CpuEntry> entriesList, 
+            out Dictionary<uint, Resource> resourceDictionary,
+            out Dictionary<uint, Node> nodeDictionary,
+            out HashSet<DataType> usedDataTypes, 
+            out bool isLittleEndian)
         {
-            List<CpuEntry> entriesList = new List<CpuEntry>();
-            Dictionary<uint, Node> nodeDictionary= new Dictionary<uint, Node>();
-            Dictionary<uint, Resource> resourceDictionary = new Dictionary<uint, Resource>();
-            HashSet<DataType> usedDataTypes = new HashSet<DataType>();
-            bool isLittleEndian;
-            using (EndiannessAwareBinaryReader b = new EndiannessAwareBinaryReader(File.OpenRead(filePath)))
+            entriesList = new List<CpuEntry>();
+            resourceDictionary = new Dictionary<uint, Resource>();
+            nodeDictionary = new Dictionary<uint, Node>();
+            usedDataTypes = new HashSet<DataType>();
+            sCpuFile.Seek(0, SeekOrigin.Begin);
+            using (EndiannessAwareBinaryReader b = new EndiannessAwareBinaryReader(sCpuFile, Encoding.ASCII, true))
             {
                 int test = b.ReadInt32();
                 isLittleEndian = Enum.IsDefined(typeof(DataType), test);
@@ -99,13 +112,14 @@ namespace CpuGpuTool
                             b.BaseStream.Seek(entry.cpuOffsetData + tmpOffset, SeekOrigin.Begin);
                             resource.name = BinaryTools.ReadString(b.BaseStream);
                         }
+
                         switch (resource.dataType)
-                        {
+                        {                            
                             case DataType.SlMaterial2:
                                 b.BaseStream.Seek(entry.cpuOffsetData + 0xC, SeekOrigin.Begin);
                                 // shader
-                                uint id = b.ReadUInt32();
-                                resource.referencedResources[id] = new Resource() { id = id, dataType = DataType.SlShader };
+                                uint id1 = b.ReadUInt32();
+                                resource.referencedResources[id1] = new Resource() { id = id1, dataType = DataType.SlShader };
                                 // textures
                                 for (int j = 0; j < 9; j++)
                                 {
@@ -114,27 +128,53 @@ namespace CpuGpuTool
                                         continue;
                                     }
                                     b.BaseStream.Seek(resource.cpuOffsetData + 0x24 + j * 4, SeekOrigin.Begin);
-                                    int offset = b.ReadInt32();
-                                    if (offset == 0)
+                                    int offset1 = b.ReadInt32();
+                                    if (offset1 == 0)
                                     {
                                         continue;
                                     }
-                                    b.BaseStream.Seek(resource.cpuOffsetData + offset + 0xC, SeekOrigin.Begin);
-                                    id = b.ReadUInt32();
-                                    resource.referencedResources[id] = new Resource() { id = id, dataType = DataType.SlTexture };
+                                    b.BaseStream.Seek(resource.cpuOffsetData + offset1 + 0xC, SeekOrigin.Begin);
+                                    id1 = b.ReadUInt32();
+                                    resource.referencedResources[id1] = new Resource() { id = id1, dataType = DataType.SlTexture };
                                 }
                                 // cbdesc
                                 for (int j = 0; j < 9; j++)
                                 {
                                     b.BaseStream.Seek(resource.cpuOffsetData + 0x50 + j * 4, SeekOrigin.Begin);
-                                    int offset = b.ReadInt32();
-                                    if (offset == 0)
+                                    int offset1 = b.ReadInt32();
+                                    if (offset1 == 0)
                                     {
                                         continue;
                                     }
-                                    b.BaseStream.Seek(resource.cpuOffsetData + offset + 0xC, SeekOrigin.Begin);
-                                    id = b.ReadUInt32();
-                                    resource.referencedResources[id] = new Resource() { id = id, dataType = DataType.SlConstantBufferDesc };
+                                    b.BaseStream.Seek(resource.cpuOffsetData + offset1 + 0xC, SeekOrigin.Begin);
+                                    id1 = b.ReadUInt32();
+                                    resource.referencedResources[id1] = new Resource() { id = id1, dataType = DataType.SlConstantBufferDesc };
+                                }
+                                break;
+                            case DataType.SlAnim:
+                                // SlSkeleton
+                                b.BaseStream.Seek(resource.cpuOffsetData + 0x10, SeekOrigin.Begin);
+                                uint id2 = b.ReadUInt32();
+                                resource.referencedResources[id2] = new Resource() { id = id2, dataType = DataType.SlSkeleton };
+                                break;
+                            case DataType.SlModel:
+                                // SlSkeleton
+                                b.BaseStream.Seek(resource.cpuOffsetData + 0xC, SeekOrigin.Begin);
+                                int offset2 = b.ReadInt32();
+                                b.BaseStream.Seek(resource.cpuOffsetData + offset2 + 0xC, SeekOrigin.Begin);
+                                uint id3 = b.ReadUInt32();
+                                if (id3 != 0)
+                                {
+                                    resource.referencedResources[id3] = new Resource() { id = id3, dataType = DataType.SlSkeleton };
+                                }
+                                // SlMaterial
+                                b.BaseStream.Seek(resource.cpuOffsetData + 0x40, SeekOrigin.Begin);
+                                int materialCount = b.ReadInt32();
+                                b.BaseStream.Seek(resource.cpuOffsetData + 0x60, SeekOrigin.Begin);
+                                for (int i = 0; i < materialCount; i++)
+                                {
+                                    id3 = b.ReadUInt32();
+                                    resource.referencedResources[id3] = new Resource() { id = id3, dataType = DataType.SlMaterial2 };
                                 }
                                 break;
                         }
@@ -176,6 +216,18 @@ namespace CpuGpuTool
                             b.BaseStream.Seek(entry.cpuOffsetData + tmpOffset, SeekOrigin.Begin);
                             node.definition = new Node() { id = b.ReadUInt32() };
                         }
+                        switch (node.dataType)
+                        {
+                            case DataType.Water13DefNode:
+                                // Water13Simulation
+                                b.BaseStream.Seek(entry.cpuOffsetData + 0xD0, SeekOrigin.Begin);
+                                uint id = b.ReadUInt32();
+                                node.referencedResources[id] = new Resource() { id = id, dataType = DataType.Water13Simulation };
+                                // Water13Renderable
+                                id = b.ReadUInt32();
+                                node.referencedResources[id] = new Resource() { id = id, dataType = DataType.Water13Renderable };
+                                break;
+                        }
                     }
 
                     cpuOffset += entry.cpuRelativeOffsetNextEntry;
@@ -207,8 +259,8 @@ namespace CpuGpuTool
                 }
                 if (resourceDictionary.TryGetValue(node.id, out Resource resource))
                 {
-                    node.partener = resource;
-                    resource.partener = node;
+                    node.referencedResources[resource.id] = resource;
+                    resource.referees[node.id] = node;
                 }
             }
 
@@ -225,16 +277,11 @@ namespace CpuGpuTool
                     }
                 }
             }
-
-            return (entriesList, resourceDictionary, nodeDictionary, usedDataTypes, isLittleEndian);
         }
 
         public void Reload()
         {
-            if (!string.IsNullOrEmpty(cpuFilePath))
-            {
-                (entriesList, resourceDictionary, nodeDictionary, usedDataTypes, isLittleEndian) = Parse(cpuFilePath);
-            }
+            Parse(msCpuFile, out entriesList, out resourceDictionary, out nodeDictionary, out usedDataTypes, out isLittleEndian);
         }
 
         public void GetCpuData(int entryIndex, Stream sOut, int outOffset = 0)
@@ -251,46 +298,27 @@ namespace CpuGpuTool
 
         public void InsertCpuData(int entryIndex, Stream sIn, int length = -1, int inOffset = 0)
         {
-            if (length == -1)
-            {
-                length = (int)sIn.Length;
-            }
-            using (FileStream fsOut = File.Open(cpuFilePath, FileMode.Open))
-            {
-                CpuEntry entry = entriesList[entryIndex];
-                BinaryTools.InsertData(sIn, fsOut, length, inOffset, entry.cpuOffsetDataHeader + entry.cpuRelativeOffsetNextEntry);
-            }
+            CpuEntry entry = entriesList[entryIndex];
+            BinaryTools.InsertData(sIn, msCpuFile, length, inOffset, entry.cpuOffsetDataHeader + entry.cpuRelativeOffsetNextEntry);
         }
 
         public void InsertGpuData(int entryIndex, Stream sIn, int length = -1, int inOffset = 0)
         {
-            if (length == -1)
-            {
-                length = (int)sIn.Length;
-            }
-            using (FileStream fsOut = File.Open(gpuFilePath, FileMode.Open))
-            {
-                CpuEntry entry = entriesList[entryIndex];
-                BinaryTools.InsertData(sIn, fsOut, length, inOffset, entry.gpuOffsetData + entry.gpuRelativeOffsetNextEntry);
-            }
+            CpuEntry entry = entriesList[entryIndex];
+            BinaryTools.InsertData(sIn, msGpuFile, length, inOffset, entry.gpuOffsetData + entry.gpuRelativeOffsetNextEntry);
         }
 
         public void DeleteCpuData(int entryIndex)
         {
             CpuEntry entry = entriesList[entryIndex];
-            using (FileStream fs = File.Open(cpuFilePath, FileMode.Open))
-            {
-                BinaryTools.ShrinkStream(fs, entry.cpuOffsetDataHeader, entry.cpuRelativeOffsetNextEntry);
-            }
+            BinaryTools.ShrinkStream(msCpuFile, entry.cpuOffsetDataHeader, entry.cpuRelativeOffsetNextEntry);
         }
 
         public void DeleteGpuData(int entryIndex)
         {
             CpuEntry entry = entriesList[entryIndex];
-            using (FileStream fs = File.Open(gpuFilePath, FileMode.Open))
-            {
-                BinaryTools.ShrinkStream(fs, entry.gpuOffsetData, entry.gpuRelativeOffsetNextEntry);
-            }
+            BinaryTools.ShrinkStream(msGpuFile, entry.gpuOffsetData, entry.gpuRelativeOffsetNextEntry);
+
         }
 
         public string SaveCpuData(int entryIndex, string outFolderPath)
@@ -300,7 +328,7 @@ namespace CpuGpuTool
             string end = Path.GetFileName(ReplaceInvalidChars(entry.name));
             string fileName = start + end.Substring(Math.Max(0, start.Length + end.Length - 255));
 
-            BinaryTools.WriteData(cpuFilePath, Path.Combine(outFolderPath, fileName), entry.cpuRelativeOffsetNextEntry, entry.cpuOffsetDataHeader);
+            BinaryTools.WriteData(msCpuFile, Path.Combine(outFolderPath, fileName), entry.cpuRelativeOffsetNextEntry, entry.cpuOffsetDataHeader);
             return fileName;
         }
 
@@ -310,7 +338,7 @@ namespace CpuGpuTool
             if (entry.gpuDataLength > 0)
             {
                 string fileName = string.Format("{0}_GPU_{1}", entry.entryNumber, Path.GetFileName(ReplaceInvalidChars(entry.name)));
-                BinaryTools.WriteData(gpuFilePath, Path.Combine(outFolderPath, fileName), entry.gpuDataLength, entry.gpuOffsetData);
+                BinaryTools.WriteData(msGpuFile, Path.Combine(outFolderPath, fileName), entry.gpuDataLength, entry.gpuOffsetData);
                 return fileName;
             }
             else
@@ -324,9 +352,9 @@ namespace CpuGpuTool
             return string.Join(" ", filename.Split(invalidCharacters));
         }
 
-        public void WriteHeader(FileStream fs, CpuEntry entry)
+        public void WriteHeader(Stream s, CpuEntry entry)
         {
-            using (EndiannessAwareBinaryWriter b = new EndiannessAwareBinaryWriter(fs, isLittleEndian, System.Text.Encoding.ASCII, true))
+            using (EndiannessAwareBinaryWriter b = new EndiannessAwareBinaryWriter(s, isLittleEndian, Encoding.ASCII, true))
             {
                 b.Write((int)entry.dataType);
                 b.Write(entry.toolVersion);
@@ -342,31 +370,30 @@ namespace CpuGpuTool
         public void ChangeEntryName(int entryIndex, string newName)
         {
             CpuEntry entry = entriesList[entryIndex];
-            using (FileStream fs = File.Open(cpuFilePath, FileMode.Open, FileAccess.ReadWrite))
-            using (EndiannessAwareBinaryReader br = new EndiannessAwareBinaryReader(fs))
-            using (EndiannessAwareBinaryWriter bw = new EndiannessAwareBinaryWriter(fs))
+            using (EndiannessAwareBinaryReader br = new EndiannessAwareBinaryReader(msCpuFile, isLittleEndian, Encoding.ASCII, true))
+            using (EndiannessAwareBinaryWriter bw = new EndiannessAwareBinaryWriter(msCpuFile, isLittleEndian, Encoding.ASCII, true))
             {
                 int nameOffset;
                 if (entry as Resource != null)
                 {
-                    fs.Seek(entry.cpuOffsetData + 4, SeekOrigin.Begin);
+                    msCpuFile.Seek(entry.cpuOffsetData + 4, SeekOrigin.Begin);
                     nameOffset = entry.cpuOffsetData + br.ReadInt32();
                     if (entry.name.Length < newName.Length || nameOffset == 0)
                     {
                         // change name offset to end of cpu data
-                        fs.Seek(entry.cpuOffsetData + 4, SeekOrigin.Begin);
+                        msCpuFile.Seek(entry.cpuOffsetData + 4, SeekOrigin.Begin);
                         bw.Write(entry.cpuDataLength);
                         nameOffset = entry.cpuOffsetData + entry.cpuDataLength;
                     }
                 }
                 else
                 {
-                    fs.Seek(entry.cpuOffsetData + 0x1C, SeekOrigin.Begin);
+                    msCpuFile.Seek(entry.cpuOffsetData + 0x1C, SeekOrigin.Begin);
                     nameOffset = entry.cpuOffsetData + br.ReadInt32();
                     if (entry.name.Length < newName.Length || nameOffset == 0)
                     {
                         // change name offset to end of cpu data
-                        fs.Seek(entry.cpuOffsetData + 0x1C, SeekOrigin.Begin);
+                        msCpuFile.Seek(entry.cpuOffsetData + 0x1C, SeekOrigin.Begin);
                         bw.Write(entry.cpuDataLength);
                         nameOffset = entry.cpuOffsetData + entry.cpuDataLength;
                     }
@@ -375,29 +402,29 @@ namespace CpuGpuTool
                 // expand the file if there is not enough space before the pointers header
                 if (nameOffset + newName.Length > entry.cpuOffsetPointersHeader)
                 {
-                    BinaryTools.ExpandStream(fs, nameOffset, nameOffset + newName.Length - entry.cpuOffsetPointersHeader);
+                    BinaryTools.ExpandStream(msCpuFile, nameOffset, nameOffset + newName.Length - entry.cpuOffsetPointersHeader);
                     // Update offset to the pointers header
-                    fs.Seek(entry.cpuOffsetDataHeader + 0x8, SeekOrigin.Begin);
+                    msCpuFile.Seek(entry.cpuOffsetDataHeader + 0x8, SeekOrigin.Begin);
                     bw.Write(nameOffset + newName.Length);
                 }
 
-                fs.Seek(nameOffset, SeekOrigin.Begin);
-                BinaryTools.WriteString(fs, newName);
+                msCpuFile.Seek(nameOffset, SeekOrigin.Begin);
+                BinaryTools.WriteString(msCpuFile, newName);
             }
         }
 
         public void ChangeEntryID(int entryIndex, uint id)
         {
             CpuEntry entry = entriesList[entryIndex];
-            using (EndiannessAwareBinaryWriter bw = new EndiannessAwareBinaryWriter(File.OpenWrite(cpuFilePath)))
+            using (EndiannessAwareBinaryWriter bw = new EndiannessAwareBinaryWriter(msCpuFile, isLittleEndian, Encoding.Default, true))
             {
                 if (entry as Resource != null)
                 {
-                    bw.BaseStream.Seek(entry.cpuOffsetData, SeekOrigin.Begin);      
+                    msCpuFile.Seek(entry.cpuOffsetData, SeekOrigin.Begin);      
                 }
                 else
                 {
-                    bw.BaseStream.Seek(entry.cpuOffsetData + 0x14, SeekOrigin.Begin);
+                    msCpuFile.Seek(entry.cpuOffsetData + 0x14, SeekOrigin.Begin);
                 }
                 bw.Write(id);
             }
@@ -410,17 +437,16 @@ namespace CpuGpuTool
             {
                 return false;
             }
-            using (FileStream fs = File.Open(cpuFilePath, FileMode.Open, FileAccess.ReadWrite))
-            using (EndiannessAwareBinaryReader br = new EndiannessAwareBinaryReader(fs))
-            using (EndiannessAwareBinaryWriter bw = new EndiannessAwareBinaryWriter(fs))
+            using (EndiannessAwareBinaryReader br = new EndiannessAwareBinaryReader(msCpuFile, isLittleEndian, Encoding.ASCII, true))
+            using (EndiannessAwareBinaryWriter bw = new EndiannessAwareBinaryWriter(msCpuFile, isLittleEndian, Encoding.ASCII, true))
             {     
-                fs.Seek(entry.cpuOffsetData + 0x68, SeekOrigin.Begin);
+                msCpuFile.Seek(entry.cpuOffsetData + 0x68, SeekOrigin.Begin);
                 int idRelOffset = br.ReadInt32();
                 if (idRelOffset == 0)
                 {
                     return false;
                 }
-                fs.Seek(entry.cpuOffsetData + idRelOffset, SeekOrigin.Begin);
+                msCpuFile.Seek(entry.cpuOffsetData + idRelOffset, SeekOrigin.Begin);
                 bw.Write(id);
             }
             return true;
@@ -433,17 +459,16 @@ namespace CpuGpuTool
             {
                 return false;
             }
-            using (FileStream fs = File.Open(cpuFilePath, FileMode.Open, FileAccess.ReadWrite))
-            using (EndiannessAwareBinaryReader br = new EndiannessAwareBinaryReader(fs))
-            using (EndiannessAwareBinaryWriter bw = new EndiannessAwareBinaryWriter(fs))
+            using (EndiannessAwareBinaryReader br = new EndiannessAwareBinaryReader(msCpuFile, isLittleEndian, Encoding.ASCII, true))
+            using (EndiannessAwareBinaryWriter bw = new EndiannessAwareBinaryWriter(msCpuFile, isLittleEndian, Encoding.ASCII, true))
             {
-                fs.Seek(entry.cpuOffsetData + 0x40, SeekOrigin.Begin);
+                msCpuFile.Seek(entry.cpuOffsetData + 0x40, SeekOrigin.Begin);
                 int idRelOffset = br.ReadInt32();
                 if (idRelOffset == 0)
                 {
                     return false;
                 }
-                fs.Seek(entry.cpuOffsetData + idRelOffset, SeekOrigin.Begin);
+                msCpuFile.Seek(entry.cpuOffsetData + idRelOffset, SeekOrigin.Begin);
                 bw.Write(id);
             }
             return true;
@@ -458,6 +483,18 @@ namespace CpuGpuTool
                 x ^= c;
             }
             return x;
+        }
+
+        public void Save()
+        {
+            if (string.IsNullOrEmpty(cpuFilePath))
+            {
+                return;
+            }
+            File.Delete(cpuFilePath);
+            File.Delete(gpuFilePath);
+            BinaryTools.WriteData(msCpuFile, cpuFilePath);
+            BinaryTools.WriteData(msGpuFile, gpuFilePath);
         }
     }
 }

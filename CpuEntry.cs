@@ -62,7 +62,6 @@ namespace CpuGpuTool
         public Node parent;
         public Dictionary<uint, Node> daughters = new Dictionary<uint, Node>();
         public Dictionary<uint, Node> instances = new Dictionary<uint, Node>();
-        public Resource partener;
     }
 
     public class Resource : CpuEntry
@@ -88,7 +87,6 @@ namespace CpuGpuTool
             id = entry.id;
         }
 
-        public Node partener;
         public Dictionary<uint, CpuEntry> referees = new Dictionary<uint, CpuEntry>();
     }
 }

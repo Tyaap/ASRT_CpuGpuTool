@@ -32,7 +32,7 @@ namespace CpuGpuTool
             s.Write(bytes, 0, length + 1);
         }
 
-        public static void WriteData(string inFilePath, string outFilePath, int length, int inOffset = 0, int outOffset = 0)
+        public static void WriteData(string inFilePath, string outFilePath, int length = -1, int inOffset = 0, int outOffset = 0)
         {
             using (FileStream fsIn = LongFile.GetFileStream(inFilePath))
             using (FileStream fsOut = LongFile.Exists(outFilePath) ? 
@@ -42,7 +42,7 @@ namespace CpuGpuTool
             }
         }
 
-        public static void WriteData(string inFilePath, Stream sOut, int length, int inOffset = 0, int outOffset = 0)
+        public static void WriteData(string inFilePath, Stream sOut, int length = -1, int inOffset = 0, int outOffset = 0)
         {
             using (FileStream fsIn = LongFile.GetFileStream(inFilePath))
             {
@@ -50,8 +50,21 @@ namespace CpuGpuTool
             }
         }
 
-        public static void WriteData(Stream sIn, Stream sOut, int length, int inOffset = 0, int outOffset = 0)
+        public static void WriteData(Stream sIn, string outFilePath, int length = -1, int inOffset = 0, int outOffset = 0)
         {
+            using (FileStream fsOut = LongFile.Exists(outFilePath) ?
+            LongFile.GetFileStream(outFilePath) : new FileStream(LongFile.CreateFileForWrite(outFilePath), FileAccess.Write))
+            {
+                WriteData(sIn, fsOut, length, inOffset, outOffset);
+            }
+        }
+
+        public static void WriteData(Stream sIn, Stream sOut, int length = -1, int inOffset = 0, int outOffset = 0)
+        {
+            if (length == -1)
+            {
+                length = (int)sIn.Length - (inOffset != -1 ? inOffset : 0);
+            }
             if (inOffset != -1)
             {
                 sIn.Seek(inOffset, SeekOrigin.Begin);
@@ -71,14 +84,22 @@ namespace CpuGpuTool
             }
         }
 
-        public static void InsertData(Stream sIn, Stream sOut, int length, int inOffset = 0, int outOffset = 0)
+        public static void InsertData(Stream sIn, Stream sOut, int length = -1, int inOffset = 0, int outOffset = 0)
         {
+            if (length == -1)
+            {
+                length = (int)sIn.Length - (inOffset != -1 ? inOffset : 0);
+            }
             ExpandStream(sOut, outOffset, length);
             WriteData(sIn, sOut, length, inOffset, outOffset);
         }
 
         public static void ExpandStream(Stream s, int offset, int sizeIncrease)
         {
+            if (offset == -1)
+            {
+                offset = (int)s.Position;
+            }
             byte[] buffer = new byte[bufferSize];
             int length = (int)s.Length;
             int pos = length;
