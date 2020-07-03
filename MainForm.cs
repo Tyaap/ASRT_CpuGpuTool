@@ -127,7 +127,7 @@ namespace CpuGpuTool
                     details += string.Format("\nShort name: {0}", node.shortName, entry.id);
                 }
 
-                details += "\n\n~~ File Offsets ~~";
+                details += "\n\n~~~ File Offsets ~~~";
                 details += string.Format("\nCPU: 0x{0:X}", entry.cpuOffsetDataHeader);
                 details += string.Format("\nCPU length: {0} bytes (with padding)", entry.cpuRelativeOffsetNextEntry);
                 if (entry.gpuDataLength > 0)
@@ -142,7 +142,7 @@ namespace CpuGpuTool
                 {
                     if (node.definition != null || node.parent != null || node.daughters.Count > 0 || node.instances.Count > 0)
                     {
-                        details += "\n\n~~ Node Links ~~";
+                        details += "\n\n~~~ Node Links ~~~";
                     }
                     if (node.definition != null)
                     {
@@ -165,7 +165,7 @@ namespace CpuGpuTool
                         details += "\nDaughters:";
                         foreach (Node n in node.daughters.Values)
                         {
-                            details += "\n     ";
+                            details += "\n    ";
                             AddEntryLink(ref details, n);
                         }
                     }
@@ -180,13 +180,13 @@ namespace CpuGpuTool
                         int count2 = node.instances.Count;
                         foreach(Node n in node.instances.Values)
                         {
-                            details += "\n     ";
+                            details += "\n    ";
                             AddEntryLink(ref details, n);
                         }
                     }
                     if (node.referencedResources.Count > 0)
                     {
-                        details += "\n\n~~ Resources Used ~~";
+                        details += "\n\n~~~ Resources Used ~~~";
                         AddReferences(ref details, node);
                     }
                 }
@@ -194,7 +194,7 @@ namespace CpuGpuTool
                 {
                     if (resource.referencedResources.Count > 0)
                     {
-                        details += "\n\n~~ Resources Used ~~";
+                        details += "\n\n~~~ Resources Used ~~~";
                         AddReferences(ref details, resource);
                     }
                     if (resource.referees.Count > 0)
@@ -210,7 +210,7 @@ namespace CpuGpuTool
             }
             if (listView1.SelectedItems.Count > 100)
             {
-                details += "More than 100 items selected, the remaining details have been omitted.";
+                details += "\n\nMore than 100 items are selected. The remaining details are not shown.";
             }
             if (listView1.SelectedItems.Count == 0)
             {
@@ -250,7 +250,7 @@ namespace CpuGpuTool
                 details += string.Format("\n{0}: ", resources.Key);
                 foreach (Resource r in resources)
                 {
-                    details += "\n     ";
+                    details += "\n    ";
                     AddEntryLink(ref details, r);
                     if (entry.id == r.id)
                     {
@@ -271,7 +271,7 @@ namespace CpuGpuTool
                 details += string.Format("\n{0}: ", entries.Key);
                 foreach (CpuEntry entry in entries)
                 {
-                    details += "\n     ";
+                    details += "\n    ";
                     AddEntryLink(ref details, entry);
                     if (resource.id == entry.id)
                     {
