@@ -101,7 +101,7 @@
             this.statusStrip1.Location = new System.Drawing.Point(0, 462);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Padding = new System.Windows.Forms.Padding(1, 0, 17, 0);
-            this.statusStrip1.Size = new System.Drawing.Size(884, 24);
+            this.statusStrip1.Size = new System.Drawing.Size(888, 24);
             this.statusStrip1.TabIndex = 1;
             this.statusStrip1.Text = "statusStrip1";
             // 
@@ -109,7 +109,7 @@
             // 
             this.toolStripStatusLabel1.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(735, 19);
+            this.toolStripStatusLabel1.Size = new System.Drawing.Size(739, 19);
             this.toolStripStatusLabel1.Spring = true;
             this.toolStripStatusLabel1.Text = "Please open a CPU file.";
             this.toolStripStatusLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -135,7 +135,7 @@
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26F));
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26F));
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(884, 486);
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(888, 486);
             this.tableLayoutPanel1.TabIndex = 0;
             // 
             // splitContainer1
@@ -151,8 +151,8 @@
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.groupBox2);
-            this.splitContainer1.Size = new System.Drawing.Size(872, 448);
-            this.splitContainer1.SplitterDistance = 597;
+            this.splitContainer1.Size = new System.Drawing.Size(876, 448);
+            this.splitContainer1.SplitterDistance = 599;
             this.splitContainer1.TabIndex = 2;
             // 
             // groupBox1
@@ -163,7 +163,7 @@
             this.groupBox1.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(2);
-            this.groupBox1.Size = new System.Drawing.Size(597, 448);
+            this.groupBox1.Size = new System.Drawing.Size(599, 448);
             this.groupBox1.TabIndex = 6;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "CPU Data Entries";
@@ -181,7 +181,7 @@
             this.tableLayoutPanel4.RowCount = 2;
             this.tableLayoutPanel4.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tableLayoutPanel4.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 67F));
-            this.tableLayoutPanel4.Size = new System.Drawing.Size(593, 426);
+            this.tableLayoutPanel4.Size = new System.Drawing.Size(595, 426);
             this.tableLayoutPanel4.TabIndex = 5;
             // 
             // listView1
@@ -196,7 +196,7 @@
             this.listView1.Location = new System.Drawing.Point(4, 4);
             this.listView1.Margin = new System.Windows.Forms.Padding(4);
             this.listView1.Name = "listView1";
-            this.listView1.Size = new System.Drawing.Size(585, 351);
+            this.listView1.Size = new System.Drawing.Size(587, 351);
             this.listView1.TabIndex = 1;
             this.listView1.UseCompatibleStateImageBehavior = false;
             this.listView1.View = System.Windows.Forms.View.Details;
@@ -216,7 +216,7 @@
             // columnHeader2
             // 
             this.columnHeader2.Text = "Name";
-            this.columnHeader2.Width = 404;
+            this.columnHeader2.Width = 406;
             // 
             // tableLayoutPanel5
             // 
@@ -234,7 +234,7 @@
             this.tableLayoutPanel5.RowCount = 1;
             this.tableLayoutPanel5.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tableLayoutPanel5.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-            this.tableLayoutPanel5.Size = new System.Drawing.Size(593, 67);
+            this.tableLayoutPanel5.Size = new System.Drawing.Size(595, 67);
             this.tableLayoutPanel5.TabIndex = 2;
             // 
             // tableLayoutPanel2
@@ -245,7 +245,7 @@
             this.tableLayoutPanel2.Controls.Add(this.textBox1, 0, 0);
             this.tableLayoutPanel2.Controls.Add(this.comboBox1, 0, 1);
             this.tableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel2.Location = new System.Drawing.Point(394, 0);
+            this.tableLayoutPanel2.Location = new System.Drawing.Point(396, 0);
             this.tableLayoutPanel2.Margin = new System.Windows.Forms.Padding(0);
             this.tableLayoutPanel2.Name = "tableLayoutPanel2";
             this.tableLayoutPanel2.RowCount = 2;
@@ -291,13 +291,13 @@
             this.tableLayoutPanel3.Controls.Add(this.button2, 0, 0);
             this.tableLayoutPanel3.Controls.Add(this.button4, 0, 1);
             this.tableLayoutPanel3.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel3.Location = new System.Drawing.Point(197, 0);
+            this.tableLayoutPanel3.Location = new System.Drawing.Point(198, 0);
             this.tableLayoutPanel3.Margin = new System.Windows.Forms.Padding(0);
             this.tableLayoutPanel3.Name = "tableLayoutPanel3";
             this.tableLayoutPanel3.RowCount = 2;
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel3.Size = new System.Drawing.Size(197, 67);
+            this.tableLayoutPanel3.Size = new System.Drawing.Size(198, 67);
             this.tableLayoutPanel3.TabIndex = 7;
             // 
             // button2
@@ -307,7 +307,7 @@
             this.button2.Location = new System.Drawing.Point(0, 0);
             this.button2.Margin = new System.Windows.Forms.Padding(0);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(197, 33);
+            this.button2.Size = new System.Drawing.Size(198, 33);
             this.button2.TabIndex = 7;
             this.button2.Text = "Find Resource ID";
             this.button2.UseVisualStyleBackColor = true;
@@ -320,7 +320,7 @@
             this.button4.Location = new System.Drawing.Point(0, 33);
             this.button4.Margin = new System.Windows.Forms.Padding(0);
             this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(197, 34);
+            this.button4.Size = new System.Drawing.Size(198, 34);
             this.button4.TabIndex = 6;
             this.button4.Text = "Find Node ID";
             this.button4.UseVisualStyleBackColor = true;
@@ -375,7 +375,7 @@
             this.groupBox2.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Padding = new System.Windows.Forms.Padding(2);
-            this.groupBox2.Size = new System.Drawing.Size(271, 448);
+            this.groupBox2.Size = new System.Drawing.Size(273, 448);
             this.groupBox2.TabIndex = 3;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Details";
@@ -572,7 +572,7 @@
             this.richTextBox1.Margin = new System.Windows.Forms.Padding(4);
             this.richTextBox1.Name = "richTextBox1";
             this.richTextBox1.ReadOnly = true;
-            this.richTextBox1.Size = new System.Drawing.Size(267, 426);
+            this.richTextBox1.Size = new System.Drawing.Size(269, 426);
             this.richTextBox1.TabIndex = 6;
             this.richTextBox1.Text = "Please select an entry.";
             this.richTextBox1.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.richTextBox1_LinkClicked);
@@ -580,7 +580,7 @@
             // MainForm
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.ClientSize = new System.Drawing.Size(884, 486);
+            this.ClientSize = new System.Drawing.Size(888, 486);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.tableLayoutPanel1);
             this.Font = new System.Drawing.Font("Segoe UI", 10F);
