@@ -20,7 +20,8 @@ namespace CpuGpuTool
         public int unknown;
         public string name;
         public uint id;
-        public Dictionary<uint, Resource> referencedResources = new Dictionary<uint, Resource>();
+        public Dictionary<uint, CpuEntry> references = new Dictionary<uint, CpuEntry>();
+        public Dictionary<uint, CpuEntry> referees = new Dictionary<uint, CpuEntry>();
 
         public override int GetHashCode()
         {
@@ -86,7 +87,5 @@ namespace CpuGpuTool
             name = entry.name;
             id = entry.id;
         }
-
-        public Dictionary<uint, CpuEntry> referees = new Dictionary<uint, CpuEntry>();
     }
 }

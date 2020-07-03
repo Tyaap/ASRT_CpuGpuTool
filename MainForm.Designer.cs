@@ -67,16 +67,13 @@
             this.cpuDataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.gpuDataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.bothToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.insertFromFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.insertToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.cPUDataToolStripMenuItem2 = new System.Windows.Forms.ToolStripMenuItem();
-            this.cPUGPUDataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.replaceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.cPUDataToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-            this.bothToolStripMenuItem2 = new System.Windows.Forms.ToolStripMenuItem();
-            this.insertToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-            this.replaceToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.fromFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.insertDataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.replaceDataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.richTextBox1 = new CpuGpuTool.RichTextBoxEx();
+            this.cPUDataToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.gPUDataToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.bothToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -166,7 +163,7 @@
             this.groupBox1.Size = new System.Drawing.Size(599, 448);
             this.groupBox1.TabIndex = 6;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "CPU Data Entries";
+            this.groupBox1.Text = "CPU File Assets";
             // 
             // tableLayoutPanel4
             // 
@@ -333,13 +330,14 @@
             this.tableLayoutPanel6.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 20F));
             this.tableLayoutPanel6.Controls.Add(this.button3, 0, 1);
             this.tableLayoutPanel6.Controls.Add(this.button1, 0, 0);
+            this.tableLayoutPanel6.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel6.Location = new System.Drawing.Point(0, 0);
             this.tableLayoutPanel6.Margin = new System.Windows.Forms.Padding(0);
             this.tableLayoutPanel6.Name = "tableLayoutPanel6";
             this.tableLayoutPanel6.RowCount = 2;
             this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel6.Size = new System.Drawing.Size(197, 67);
+            this.tableLayoutPanel6.Size = new System.Drawing.Size(198, 67);
             this.tableLayoutPanel6.TabIndex = 8;
             // 
             // button3
@@ -349,7 +347,7 @@
             this.button3.Location = new System.Drawing.Point(0, 33);
             this.button3.Margin = new System.Windows.Forms.Padding(0);
             this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(197, 34);
+            this.button3.Size = new System.Drawing.Size(198, 34);
             this.button3.TabIndex = 3;
             this.button3.Text = "Save";
             this.button3.UseVisualStyleBackColor = true;
@@ -361,7 +359,7 @@
             this.button1.Location = new System.Drawing.Point(0, 0);
             this.button1.Margin = new System.Windows.Forms.Padding(0);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(197, 33);
+            this.button1.Size = new System.Drawing.Size(198, 33);
             this.button1.TabIndex = 2;
             this.button1.Text = "Open CPU File";
             this.button1.UseVisualStyleBackColor = true;
@@ -390,9 +388,9 @@
             this.editToolStripMenuItem,
             this.toolStripSeparator1,
             this.saveToFileToolStripMenuItem,
-            this.insertFromFileToolStripMenuItem});
+            this.fromFileToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(122, 164);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(181, 186);
             // 
             // cutToolStripMenuItem
             // 
@@ -479,90 +477,48 @@
             // cpuDataToolStripMenuItem
             // 
             this.cpuDataToolStripMenuItem.Name = "cpuDataToolStripMenuItem";
-            this.cpuDataToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
+            this.cpuDataToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.cpuDataToolStripMenuItem.Text = "CPU Data";
             this.cpuDataToolStripMenuItem.Click += new System.EventHandler(this.CpuDataToolStripMenuItem_Click);
             // 
             // gpuDataToolStripMenuItem
             // 
             this.gpuDataToolStripMenuItem.Name = "gpuDataToolStripMenuItem";
-            this.gpuDataToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
+            this.gpuDataToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.gpuDataToolStripMenuItem.Text = "GPU Data";
             this.gpuDataToolStripMenuItem.Click += new System.EventHandler(this.GpuDataToolStripMenuItem_Click);
             // 
             // bothToolStripMenuItem
             // 
             this.bothToolStripMenuItem.Name = "bothToolStripMenuItem";
-            this.bothToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
+            this.bothToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.bothToolStripMenuItem.Text = "Both";
             this.bothToolStripMenuItem.Click += new System.EventHandler(this.BothToolStripMenuItem_Click);
             // 
-            // insertFromFileToolStripMenuItem
+            // fromFileToolStripMenuItem
             // 
-            this.insertFromFileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.insertToolStripMenuItem,
-            this.replaceToolStripMenuItem,
-            this.bothToolStripMenuItem2});
-            this.insertFromFileToolStripMenuItem.Enabled = false;
-            this.insertFromFileToolStripMenuItem.Name = "insertFromFileToolStripMenuItem";
-            this.insertFromFileToolStripMenuItem.Size = new System.Drawing.Size(121, 22);
-            this.insertFromFileToolStripMenuItem.Text = "From file";
+            this.fromFileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.insertDataToolStripMenuItem,
+            this.replaceDataToolStripMenuItem});
+            this.fromFileToolStripMenuItem.Name = "fromFileToolStripMenuItem";
+            this.fromFileToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.fromFileToolStripMenuItem.Text = "From file";
             // 
-            // insertToolStripMenuItem
+            // insertDataToolStripMenuItem
             // 
-            this.insertToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.cPUDataToolStripMenuItem2,
-            this.cPUGPUDataToolStripMenuItem});
-            this.insertToolStripMenuItem.Name = "insertToolStripMenuItem";
-            this.insertToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
-            this.insertToolStripMenuItem.Text = "CPU data";
+            this.insertDataToolStripMenuItem.Name = "insertDataToolStripMenuItem";
+            this.insertDataToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.insertDataToolStripMenuItem.Text = "Insert data";
             // 
-            // cPUDataToolStripMenuItem2
+            // replaceDataToolStripMenuItem
             // 
-            this.cPUDataToolStripMenuItem2.Name = "cPUDataToolStripMenuItem2";
-            this.cPUDataToolStripMenuItem2.Size = new System.Drawing.Size(115, 22);
-            this.cPUDataToolStripMenuItem2.Text = "Insert";
-            // 
-            // cPUGPUDataToolStripMenuItem
-            // 
-            this.cPUGPUDataToolStripMenuItem.Name = "cPUGPUDataToolStripMenuItem";
-            this.cPUGPUDataToolStripMenuItem.Size = new System.Drawing.Size(115, 22);
-            this.cPUGPUDataToolStripMenuItem.Text = "Replace";
-            // 
-            // replaceToolStripMenuItem
-            // 
-            this.replaceToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.cPUDataToolStripMenuItem1});
-            this.replaceToolStripMenuItem.Name = "replaceToolStripMenuItem";
-            this.replaceToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
-            this.replaceToolStripMenuItem.Text = "GPU data";
-            // 
-            // cPUDataToolStripMenuItem1
-            // 
-            this.cPUDataToolStripMenuItem1.Name = "cPUDataToolStripMenuItem1";
-            this.cPUDataToolStripMenuItem1.Size = new System.Drawing.Size(115, 22);
-            this.cPUDataToolStripMenuItem1.Text = "Replace";
-            // 
-            // bothToolStripMenuItem2
-            // 
-            this.bothToolStripMenuItem2.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.insertToolStripMenuItem1,
-            this.replaceToolStripMenuItem1});
-            this.bothToolStripMenuItem2.Name = "bothToolStripMenuItem2";
-            this.bothToolStripMenuItem2.Size = new System.Drawing.Size(123, 22);
-            this.bothToolStripMenuItem2.Text = "Both";
-            // 
-            // insertToolStripMenuItem1
-            // 
-            this.insertToolStripMenuItem1.Name = "insertToolStripMenuItem1";
-            this.insertToolStripMenuItem1.Size = new System.Drawing.Size(115, 22);
-            this.insertToolStripMenuItem1.Text = "Insert";
-            // 
-            // replaceToolStripMenuItem1
-            // 
-            this.replaceToolStripMenuItem1.Name = "replaceToolStripMenuItem1";
-            this.replaceToolStripMenuItem1.Size = new System.Drawing.Size(115, 22);
-            this.replaceToolStripMenuItem1.Text = "Replace";
+            this.replaceDataToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.cPUDataToolStripMenuItem1,
+            this.gPUDataToolStripMenuItem1,
+            this.bothToolStripMenuItem1});
+            this.replaceDataToolStripMenuItem.Name = "replaceDataToolStripMenuItem";
+            this.replaceDataToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.replaceDataToolStripMenuItem.Text = "Replace";
             // 
             // richTextBox1
             // 
@@ -576,6 +532,27 @@
             this.richTextBox1.TabIndex = 6;
             this.richTextBox1.Text = "Please select an entry.";
             this.richTextBox1.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.richTextBox1_LinkClicked);
+            // 
+            // cPUDataToolStripMenuItem1
+            // 
+            this.cPUDataToolStripMenuItem1.Name = "cPUDataToolStripMenuItem1";
+            this.cPUDataToolStripMenuItem1.Size = new System.Drawing.Size(180, 22);
+            this.cPUDataToolStripMenuItem1.Text = "CPU Data";
+            this.cPUDataToolStripMenuItem1.Click += new System.EventHandler(this.cPUDataToolStripMenuItem1_Click);
+            // 
+            // gPUDataToolStripMenuItem1
+            // 
+            this.gPUDataToolStripMenuItem1.Name = "gPUDataToolStripMenuItem1";
+            this.gPUDataToolStripMenuItem1.Size = new System.Drawing.Size(180, 22);
+            this.gPUDataToolStripMenuItem1.Text = "GPU Data";
+            this.gPUDataToolStripMenuItem1.Click += new System.EventHandler(this.gPUDataToolStripMenuItem1_Click);
+            // 
+            // bothToolStripMenuItem1
+            // 
+            this.bothToolStripMenuItem1.Name = "bothToolStripMenuItem1";
+            this.bothToolStripMenuItem1.Size = new System.Drawing.Size(180, 22);
+            this.bothToolStripMenuItem1.Text = "Both";
+            this.bothToolStripMenuItem1.Click += new System.EventHandler(this.bothToolStripMenuItem1_Click);
             // 
             // MainForm
             // 
@@ -641,23 +618,20 @@
         private System.Windows.Forms.ToolStripMenuItem renameToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripMenuItem saveToFileToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem insertFromFileToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem fromFileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem cpuDataToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem gpuDataToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem bothToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem entryIDToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem insertToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem cPUDataToolStripMenuItem2;
-        private System.Windows.Forms.ToolStripMenuItem cPUGPUDataToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem replaceToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem cPUDataToolStripMenuItem1;
-        private System.Windows.Forms.ToolStripMenuItem bothToolStripMenuItem2;
-        private System.Windows.Forms.ToolStripMenuItem insertToolStripMenuItem1;
-        private System.Windows.Forms.ToolStripMenuItem replaceToolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem insertDataToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem replaceDataToolStripMenuItem;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel3;
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel6;
         private System.Windows.Forms.Button button3;
+        private System.Windows.Forms.ToolStripMenuItem cPUDataToolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem gPUDataToolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem bothToolStripMenuItem1;
     }
 }
 

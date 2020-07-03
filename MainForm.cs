@@ -103,7 +103,7 @@ namespace CpuGpuTool
 
         public void RefreshEntryStatus()
         {
-            toolStripStatusLabel3.Text = string.Format("{0} Entries, {1} Selected", listView1.Items.Count, listView1.SelectedItems.Count);
+            toolStripStatusLabel3.Text = string.Format("{0} Assets, {1} Selected", listView1.Items.Count, listView1.SelectedItems.Count);
         }
 
         public void RefreshDetailsText(object sender = null, EventArgs e = null)
@@ -117,10 +117,10 @@ namespace CpuGpuTool
                 Node node = entry as Node;
                 Resource resource = entry as Resource;
 
-                details += string.Format("----------- ENTRY #{0} -----------", entry.entryNumber);
+                details += string.Format("----------- ASSET #{0} -----------", entry.entryNumber);
                 details += (node != null) ? "\nSumo Engine Node" : "\nSumo Loader Resource";
                 details += string.Format("\nType: {0} ({0:X})", entry.dataType);
-                details += string.Format("\nEntry ID: {0:X8}", entry.id);
+                details += string.Format("\nAsset ID: {0:X8}", entry.id);
                 details += string.Format("\nName: {0}", entry.name, entry.id);
                 if (node != null && !string.IsNullOrEmpty(node.shortName))
                 {
@@ -184,25 +184,19 @@ namespace CpuGpuTool
                             AddEntryLink(ref details, n);
                         }
                     }
-                    if (node.referencedResources.Count > 0)
-                    {
-                        details += "\n\n~~~ Resources Used ~~~";
-                        AddReferences(ref details, node);
-                    }
                 }
-                if (resource != null)
+
+                if (entry.references.Count > 0)
                 {
-                    if (resource.referencedResources.Count > 0)
-                    {
-                        details += "\n\n~~~ Resources Used ~~~";
-                        AddReferences(ref details, resource);
-                    }
-                    if (resource.referees.Count > 0)
-                    {
-                        details += "\n\n~~ Used By ~~";
-                        AddReferees(ref details, resource);
-                    }
+                    details += "\n\n~~~ Assets Used ~~~";
+                    AddRefs(ref details, entry.id, entry.references);
                 }
+                if (entry.referees.Count > 0)
+                {
+                    details += "\n\n~~ Used by ~~";
+                    AddRefs(ref details, entry.id, entry.referees);
+                }
+
                 if (i < count - 1)
                 {
                     details += "\n\n";
@@ -239,20 +233,20 @@ namespace CpuGpuTool
             }
         }
 
-        private void AddReferences(ref string details, CpuEntry entry)
+        private void AddRefs(ref string details, uint entryId, Dictionary<uint, CpuEntry> refs)
         {
-            if (entry.referencedResources.Count == 0)
+            if (refs.Count == 0)
             {
                 return;
             }
-            foreach (var resources in entry.referencedResources.Values.GroupBy(x => x.dataType))
+            foreach (var entries in refs.Values.GroupBy(x => x.dataType))
             {
-                details += string.Format("\n{0}: ", resources.Key);
-                foreach (Resource r in resources)
+                details += string.Format("\n{0}: ", entries.Key);
+                foreach (CpuEntry entry in entries)
                 {
                     details += "\n    ";
-                    AddEntryLink(ref details, r);
-                    if (entry.id == r.id)
+                    AddEntryLink(ref details, entry);
+                    if (entryId == entry.id)
                     {
                         details += " (same ID)";
                     }
@@ -513,7 +507,7 @@ namespace CpuGpuTool
                     ((ToolStripMenuItem)contextMenuStrip1.Items["saveToFileToolStripMenuItem"]).DropDownItems["gpuDataToolStripMenuItem"].Enabled =
                         ((ToolStripMenuItem)contextMenuStrip1.Items["saveToFileToolStripMenuItem"]).DropDownItems["bothToolStripMenuItem"].Enabled = gpuDataAvailable;
 
-
+                    ((ToolStripMenuItem)contextMenuStrip1.Items["fromFileToolStripMenuItem"]).DropDownItems["replaceDataToolStripMenuItem"].Enabled = (listView1.SelectedItems.Count == 1);
 
                     contextMenuStrip1.Items["pasteToolStripMenuItem"].Enabled = (GetDataFromClipboard() != null);
 
@@ -713,6 +707,71 @@ namespace CpuGpuTool
         {
             cpuFile.Save();
             button3.Enabled = false;
+        }
+
+        private void cPUDataToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            ReplaceFromFile(true, false);
+        }
+
+        private void gPUDataToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            ReplaceFromFile(false, true);
+        }
+
+        private void bothToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            ReplaceFromFile(true, true);
+        }
+
+        private void ReplaceFromFile(bool cpuData, bool gpuData)
+        {
+            int entryIndex = int.Parse(listView1.FocusedItem.SubItems[0].Text) - 1;
+            string cpuDataPath = null;
+            string gpuDataPath = null;
+            using (OpenFileDialog fileDialog = new OpenFileDialog() { Multiselect = false, InitialDirectory = lastDirectoryPath })
+            {      
+                if (cpuData)
+                {
+                    fileDialog.Title = "Select CPU data file";
+                    if (fileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        cpuDataPath = fileDialog.FileName;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+                if (gpuData)
+                {
+                    fileDialog.Title = "Select GPU data file";
+                    if (fileDialog.ShowDialog() != DialogResult.OK)
+                    {
+                        return;
+                    }
+                    gpuDataPath = fileDialog.FileName;
+                }
+
+                if (cpuData)
+                {
+                    cpuFile.ReplaceCpuData(entryIndex, cpuDataPath);
+                }
+                if (gpuData)
+                {
+                    cpuFile.ReplaceGpuData(entryIndex, gpuDataPath);          
+                }
+
+                cpuFile.Reload();
+                if (cpuData)
+                {
+                    RefreshCpuEntryList(true, true);
+                    RefreshEntryStatus();
+                    RefreshDataTypeChoices();
+                }
+                RefreshDetailsText();
+                button3.Enabled = true;
+            }
         }
     }
 }
