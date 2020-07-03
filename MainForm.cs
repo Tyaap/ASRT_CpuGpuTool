@@ -14,6 +14,7 @@ namespace CpuGpuTool
         public string typeFilter = "";
         public Timer listSelectTimer = new Timer();
         public string lastDirectoryPath = "";
+        Dictionary<uint, Tuple<int, EntryType>> entryLinks = new Dictionary<uint, Tuple<int, EntryType>>();
 
         public MainForm()
         {
@@ -108,7 +109,7 @@ namespace CpuGpuTool
         public void RefreshDetailsText(object sender = null, EventArgs e = null)
         {
             string details = "";
-            List<Tuple<string, string, int>> links = new List<Tuple<string, string, int>>();
+            entryLinks.Clear();
             int count = Math.Min(listView1.SelectedItems.Count, 100);
             for (int i = 0; i < count; i++)
             {
@@ -146,17 +147,17 @@ namespace CpuGpuTool
                     if (node.definition != null)
                     {
                         details += "\nDefinition: ";
-                        AddEntryLink(links, node.definition, details.Length);
+                        AddEntryLink(ref details, node.definition);
                     }
                     if (node.parent != null)
                     {
                         details += "\nParent: ";
-                        AddEntryLink(links, node.parent, details.Length);
+                        AddEntryLink(ref details, node.parent);
                     }
                     if (node.daughters.Count == 1)
                     {
                         details += "\nDaughter: ";
-                        AddEntryLink(links, node.daughters.Values.Single(), details.Length);
+                        AddEntryLink(ref details, node.daughters.Values.Single());
 
                     }
                     if (node.daughters.Count > 1)
@@ -165,13 +166,13 @@ namespace CpuGpuTool
                         foreach (Node n in node.daughters.Values)
                         {
                             details += "\n     ";
-                            AddEntryLink(links, n, details.Length);
+                            AddEntryLink(ref details, n);
                         }
                     }
                     if (node.instances.Count == 1)
                     {
                         details += "\nInstance: ";
-                        AddEntryLink(links, node.instances.Values.Single(), details.Length);
+                        AddEntryLink(ref details, node.instances.Values.Single());
                     }
                     if (node.instances.Count > 1)
                     {
@@ -180,26 +181,26 @@ namespace CpuGpuTool
                         foreach(Node n in node.instances.Values)
                         {
                             details += "\n     ";
-                            AddEntryLink(links, n, details.Length);
+                            AddEntryLink(ref details, n);
                         }
                     }
                     if (node.referencedResources.Count > 0)
                     {
-                        details += "\n\n~~ Resource References ~~";
-                        GetReferencesString(node, ref details, links);
+                        details += "\n\n~~ Resources Used ~~";
+                        AddReferences(ref details, node);
                     }
                 }
                 if (resource != null)
                 {
                     if (resource.referencedResources.Count > 0)
                     {
-                        details += "\n\n~~ Resource References ~~";
-                        GetReferencesString(resource, ref details, links);
+                        details += "\n\n~~ Resources Used ~~";
+                        AddReferences(ref details, resource);
                     }
                     if (resource.referees.Count > 0)
                     {
-                        details += "\n\n~~ Referees ~~";
-                        GetRefereesString(resource, ref details, links);
+                        details += "\n\n~~ Used By ~~";
+                        AddReferees(ref details, resource);
                     }
                 }
                 if (i < count - 1)
@@ -217,20 +218,28 @@ namespace CpuGpuTool
             }
             richTextBox1.Clear();
             richTextBox1.Text = details;
-            
-            for (int i = links.Count - 1; i >= 0; i--)
+            FormatEntryLinks();
+        }
+
+        private void AddEntryLink(ref string details, CpuEntry entry)
+        {
+            entryLinks[entry.id] = new Tuple<int, EntryType>(details.Length, entry as Node != null ? EntryType.Node : EntryType.Resource);
+            details += entry.id.ToString("X8");
+        }
+
+        private void FormatEntryLinks()
+        {
+            foreach (var link in entryLinks)
             {
-                var link = links[i];
-                richTextBox1.InsertLink(link.Item1, link.Item2, link.Item3);
+                int position = link.Value.Item1;
+                richTextBox1.SelectionStart = position;
+                richTextBox1.Select(position, 8);
+                richTextBox1.SetSelectionLink(true);
+                richTextBox1.Select(position + 8, 0);
             }
         }
 
-        private void AddEntryLink(List<Tuple<string, string, int>> links, CpuEntry entry, int position)
-        {
-            links.Add(new Tuple<string, string, int>(entry.id.ToString("X8"), entry as Node != null ? "node" : "resource", position));
-        }
-
-        private void GetReferencesString(CpuEntry entry, ref string details, List<Tuple<string, string, int>> links)
+        private void AddReferences(ref string details, CpuEntry entry)
         {
             if (entry.referencedResources.Count == 0)
             {
@@ -242,7 +251,7 @@ namespace CpuGpuTool
                 foreach (Resource r in resources)
                 {
                     details += "\n     ";
-                    AddEntryLink(links, r, details.Length);
+                    AddEntryLink(ref details, r);
                     if (entry.id == r.id)
                     {
                         details += " (same ID)";
@@ -251,7 +260,7 @@ namespace CpuGpuTool
             }
         }
 
-        private void GetRefereesString(Resource resource, ref string details, List<Tuple<string, string, int>> links)
+        private void AddReferees(ref string details, Resource resource)
         {
             if (resource.referees.Count == 0)
             {
@@ -263,7 +272,7 @@ namespace CpuGpuTool
                 foreach (CpuEntry entry in entries)
                 {
                     details += "\n     ";
-                    AddEntryLink(links, entry, details.Length);
+                    AddEntryLink(ref details, entry);
                     if (resource.id == entry.id)
                     {
                         details += " (same ID)";
@@ -367,34 +376,36 @@ namespace CpuGpuTool
 
         private void richTextBox1_LinkClicked(object sender, LinkClickedEventArgs e)
         {
-            string[] linkParts = e.LinkText.Split('#');
-            SelectEntryByID(linkParts[0], linkParts[1] == "node" ? EntryType.Node : EntryType.Resource);
+            ParseHexString(e.LinkText, out uint id);
+            SelectEntryByID(id, entryLinks[id].Item2);
+        }
+
+        private void IDSearch(EntryType entryType)
+        {
+            using (DialogBoxTextEntry dialog = new DialogBoxTextEntry())
+            {
+                dialog.Text = string.Format("Enter a {0} ID", entryType);
+                dialog.button1.Text = "Search";
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    if (!ParseHexString(dialog.textBox1.Text, out uint id))
+                    {
+                        MessageBox.Show("Invalid ID!\nYou must enter a 32bit hex number.", "Invalid ID!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                    SelectEntryByID(id, entryType);
+                }
+            }
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
-            using (DialogBoxTextEntry dialog = new DialogBoxTextEntry())
-            {
-                dialog.Text = "Enter a node ID";
-                dialog.button1.Text = "Search";
-                if (dialog.ShowDialog() == DialogResult.OK)
-                {
-                    SelectEntryByID(dialog.textBox1.Text, EntryType.Node);
-                }
-            }
+            IDSearch(EntryType.Node);
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            using (DialogBoxTextEntry dialog = new DialogBoxTextEntry())
-            {
-                dialog.Text = "Enter a resource ID";
-                dialog.button1.Text = "Search";
-                if (dialog.ShowDialog() == DialogResult.OK)
-                {
-                    SelectEntryByID(dialog.textBox1.Text, EntryType.Resource);
-                }
-            }
+            IDSearch(EntryType.Resource);
         }
 
         private bool ParseHexString(string idString, out uint id)
@@ -406,13 +417,8 @@ namespace CpuGpuTool
             return uint.TryParse(idString, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out id);
         }
 
-        private void SelectEntryByID(string idString, EntryType type = (EntryType)3) // Default search type: nodes + resources
+        private void SelectEntryByID(uint id, EntryType type = (EntryType)3) // Default search type: nodes + resources
         {
-            if (!ParseHexString(idString, out uint id))
-            {
-                MessageBox.Show("Invalid ID!\nYou must enter a 32bit hex number.", "Invalid ID!", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
             CpuEntry entry;
             switch (type)
             {
