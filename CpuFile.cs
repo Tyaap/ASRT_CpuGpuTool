@@ -36,7 +36,11 @@ namespace CpuGpuTool
             msCpuFile = new MemoryStream();
             msGpuFile = new MemoryStream();
             BinaryTools.WriteData(cpuFilePath, msCpuFile);
-            BinaryTools.WriteData(gpuFilePath, msGpuFile);
+            if (File.Exists(gpuFilePath))
+            {
+                // Note: any operation that needs gpu data will fail without this file
+                BinaryTools.WriteData(gpuFilePath, msGpuFile);
+            }
             Parse(msCpuFile, out entriesList, out resourceDictionary, out nodeDictionary, out usedDataTypes, out isLittleEndian);
         }
 
@@ -306,12 +310,12 @@ namespace CpuGpuTool
                 List<uint> ids = new List<uint>(entry.references.Keys);
                 foreach (uint id in ids)
                 {
-                    if(resourceDictionary.TryGetValue(id, out Resource foundResource))
+                    if(resourceDictionary.TryGetValue(id, out Resource foundResource) && foundResource.dataType == entry.references[id].dataType)
                     {
                         entry.references[id] = foundResource;
                         foundResource.referees[entry.id] = entry;
                     }
-                    else if (nodeDictionary.TryGetValue(id, out Node foundNode))
+                    else if (nodeDictionary.TryGetValue(id, out Node foundNode) && foundNode.dataType == entry.references[id].dataType)
                     {
                         if (foundNode.parent == null || foundNode.parent.id != entry.id)
                         {
@@ -354,24 +358,24 @@ namespace CpuGpuTool
             }
         }
 
-        public void InsertCpuData(int entryIndex, Stream sIn, int length = -1, int inOffset = 0)
+        public int InsertCpuData(int entryIndex, Stream sIn, int length = -1, int inOffset = 0)
         {
             CpuEntry entry = entriesList[entryIndex];
-            BinaryTools.InsertData(sIn, msCpuFile, length, inOffset, entry.cpuOffsetDataHeader + entry.cpuRelativeOffsetNextEntry);
+            return BinaryTools.InsertData(sIn, msCpuFile, length, inOffset, entry.cpuOffsetDataHeader + entry.cpuRelativeOffsetNextEntry);
         }
 
-        public void InsertGpuData(int entryIndex, string inFilePath, int length = -1, int inOffset = 0)
+        public int InsertGpuData(int entryIndex, string inFilePath, int length = -1, int inOffset = 0)
         {
             using (FileStream fsIn = File.OpenRead(inFilePath))
             {
                 CpuEntry entry = entriesList[entryIndex];
-                BinaryTools.InsertData(fsIn, msGpuFile, length, inOffset, entry.gpuOffsetData + entry.gpuRelativeOffsetNextEntry);
+                return BinaryTools.InsertData(fsIn, msGpuFile, length, inOffset, entry.gpuOffsetData + entry.gpuRelativeOffsetNextEntry);
             }
         }
-        public void InsertGpuData(int entryIndex, Stream sIn, int length = -1, int inOffset = 0)
+        public int InsertGpuData(int entryIndex, Stream sIn, int length = -1, int inOffset = 0)
         {
             CpuEntry entry = entriesList[entryIndex];
-            BinaryTools.InsertData(sIn, msGpuFile, length, inOffset, entry.gpuOffsetData + entry.gpuRelativeOffsetNextEntry);
+            return BinaryTools.InsertData(sIn, msGpuFile, length, inOffset, entry.gpuOffsetData + entry.gpuRelativeOffsetNextEntry);
         }
 
         public void DeleteCpuData(int entryIndex)
@@ -386,53 +390,60 @@ namespace CpuGpuTool
             BinaryTools.ShrinkStream(msGpuFile, entry.gpuOffsetData, entry.gpuRelativeOffsetNextEntry);
         }
 
-        public void ReplaceCpuData(int entryIndex, string inFilePath, int length = -1, int inOffset = 0)
+        public int ReplaceCpuData(int entryIndex, string inFilePath, int length = -1, int inOffset = 0, bool updateHeader = true)
         {
             using (FileStream fsIn = File.OpenRead(inFilePath))
             {
-                ReplaceCpuData(entryIndex, fsIn, length, inOffset);
+                return ReplaceCpuData(entryIndex, fsIn, length, inOffset, updateHeader);
             }
         }
 
-        public void ReplaceCpuData(int entryIndex, Stream sIn, int length = -1, int inOffset = 0)
+        public int ReplaceCpuData(int entryIndex, Stream sIn, int length = -1, int inOffset = 0, bool updateHeader = true)
         {
             DeleteCpuData(entryIndex);
-            InsertCpuData(Math.Max(0, entryIndex - 1), sIn, length, inOffset);
-
+            int bytesWritten = InsertCpuData(Math.Max(0, entryIndex - 1), sIn, length, inOffset);
+            if (!updateHeader)
+            {
+                return 0;
+            }
             // update gpuRelativeOffsetNextEntry and gpuFataLength in the cpu data header
             CpuEntry entry = entriesList[entryIndex];
-            using (EndiannessAwareBinaryWriter b = new EndiannessAwareBinaryWriter(msCpuFile, isLittleEndian, Encoding.ASCII, true))
-            {
-                msCpuFile.Seek(entry.cpuOffsetDataHeader + 0x10, SeekOrigin.Begin);
-                b.Write(entry.gpuRelativeOffsetNextEntry);
-                b.Write(entry.gpuDataLength);
-            }
+            ChangeGpuDataInfo(entryIndex, entry.gpuRelativeOffsetNextEntry, entry.gpuDataLength);
+            return bytesWritten;
         }
 
-        public void ReplaceGpuData(int entryIndex, string inFilePath, int length = -1, int inOffset = 0)
+        public int ReplaceGpuData(int entryIndex, string inFilePath, int length = -1, int inOffset = 0, bool updateHeader = true)
         {
             using (FileStream fsIn = File.OpenRead(inFilePath))
             {
-                ReplaceGpuData(entryIndex, fsIn, length, inOffset);
+                return ReplaceGpuData(entryIndex, fsIn, length, inOffset, updateHeader);
             }
         }
 
-        public void ReplaceGpuData(int entryIndex, Stream sIn, int length = -1, int inOffset = 0)
+        public int ReplaceGpuData(int entryIndex, Stream sIn, int length = -1, int inOffset = 0, bool updateHeader = true)
         {
             if (length == -1)
             {
                 length = (int)sIn.Length - (inOffset != -1 ? inOffset : 0);
             }
             DeleteGpuData(entryIndex);
-            InsertGpuData(Math.Max(0, entryIndex - 1), sIn, length, inOffset);
+            int bytesWritten = InsertGpuData(Math.Max(0, entryIndex - 1), sIn, length, inOffset);
+            if (!updateHeader)
+            {
+                return 0;
+            }
+            // update gpuRelativeOffsetNextEntry and gpuDataLength in the cpu data header
+            ChangeGpuDataInfo(entryIndex, length, length);
+            return bytesWritten;
+        }
 
-            // update gpuRelativeOffsetNextEntry and gpuFataLength in the cpu data header
-            CpuEntry entry = entriesList[entryIndex];
+        public void ChangeGpuDataInfo(int entryIndex, int gpuRelativeOffsetNextEntry, int gpuDataLength)
+        {
             using (EndiannessAwareBinaryWriter b = new EndiannessAwareBinaryWriter(msCpuFile, isLittleEndian, Encoding.ASCII, true))
             {
-                msCpuFile.Seek(entry.cpuOffsetDataHeader + 0x10, SeekOrigin.Begin);
-                b.Write(length);
-                b.Write(length);
+                msCpuFile.Seek(entriesList[entryIndex].cpuOffsetDataHeader + 0x10, SeekOrigin.Begin);
+                b.Write(gpuRelativeOffsetNextEntry);
+                b.Write(gpuDataLength);
             }
         }
 

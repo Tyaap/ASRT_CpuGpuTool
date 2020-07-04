@@ -753,13 +753,15 @@ namespace CpuGpuTool
                     gpuDataPath = fileDialog.FileName;
                 }
 
+                CpuFile tmpCpuFile = null;
                 if (cpuData)
                 {
-                    cpuFile.ReplaceCpuData(entryIndex, cpuDataPath);
+                    tmpCpuFile = new CpuFile(cpuDataPath); // Read in data to find how many entries it contains
+                    cpuFile.ReplaceCpuData(entryIndex, tmpCpuFile.msCpuFile, updateHeader: tmpCpuFile.Count == 1);
                 }
                 if (gpuData)
                 {
-                    cpuFile.ReplaceGpuData(entryIndex, gpuDataPath);          
+                    cpuFile.ReplaceGpuData(entryIndex, gpuDataPath, updateHeader: tmpCpuFile == null || tmpCpuFile.Count == 1);
                 }
 
                 cpuFile.Reload();
@@ -769,6 +771,50 @@ namespace CpuGpuTool
                     RefreshEntryStatus();
                     RefreshDataTypeChoices();
                 }
+                RefreshDetailsText();
+                button3.Enabled = true;
+            }
+        }
+
+        private void insertDataToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            int entryIndex = int.Parse(listView1.FocusedItem.SubItems[0].Text) - 1;
+            using (OpenFileDialog fileDialog = new OpenFileDialog() { Multiselect = false, InitialDirectory = lastDirectoryPath })
+            {
+                CpuFile tmpCpuFile;
+                fileDialog.Title = "Select CPU data file";
+                if (fileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    tmpCpuFile = new CpuFile(fileDialog.FileName);
+                }
+                else
+                {
+                    return;
+                }
+                CpuEntry lastEntry = tmpCpuFile.entriesList.Last();
+                if (lastEntry.gpuOffsetData + lastEntry.gpuRelativeOffsetNextEntry > 0)
+                {
+                    fileDialog.Title = "Select GPU data file";
+                    if (fileDialog.ShowDialog() != DialogResult.OK)
+                    {
+                        return;
+                    }
+                    cpuFile.InsertCpuData(entryIndex, tmpCpuFile.msCpuFile);
+                    int length = cpuFile.InsertGpuData(entryIndex, fileDialog.FileName);
+                    if (tmpCpuFile.Count == 1)
+                    {
+                        cpuFile.ChangeGpuDataInfo(entryIndex, length, length);
+                    }
+                }
+                else
+                {
+                    cpuFile.InsertCpuData(entryIndex, tmpCpuFile.msCpuFile);
+                }
+
+                cpuFile.Reload();
+                RefreshCpuEntryList(true, true);
+                RefreshEntryStatus();
+                RefreshDataTypeChoices();
                 RefreshDetailsText();
                 button3.Enabled = true;
             }

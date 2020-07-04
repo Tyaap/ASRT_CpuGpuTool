@@ -32,34 +32,34 @@ namespace CpuGpuTool
             s.Write(bytes, 0, length + 1);
         }
 
-        public static void WriteData(string inFilePath, string outFilePath, int length = -1, int inOffset = 0, int outOffset = 0)
+        public static int WriteData(string inFilePath, string outFilePath, int length = -1, int inOffset = 0, int outOffset = 0)
         {
             using (FileStream fsIn = LongFile.GetFileStream(inFilePath))
             using (FileStream fsOut = LongFile.Exists(outFilePath) ? 
                 LongFile.GetFileStream(outFilePath) : new FileStream(LongFile.CreateFileForWrite(outFilePath), FileAccess.Write))
             {
-                WriteData(fsIn, fsOut, length, inOffset, outOffset);
+                return WriteData(fsIn, fsOut, length, inOffset, outOffset);
             }
         }
 
-        public static void WriteData(string inFilePath, Stream sOut, int length = -1, int inOffset = 0, int outOffset = 0)
+        public static int WriteData(string inFilePath, Stream sOut, int length = -1, int inOffset = 0, int outOffset = 0)
         {
             using (FileStream fsIn = LongFile.GetFileStream(inFilePath))
             {
-                WriteData(fsIn, sOut, length, inOffset, outOffset);
+                return WriteData(fsIn, sOut, length, inOffset, outOffset);
             }
         }
 
-        public static void WriteData(Stream sIn, string outFilePath, int length = -1, int inOffset = 0, int outOffset = 0)
+        public static int WriteData(Stream sIn, string outFilePath, int length = -1, int inOffset = 0, int outOffset = 0)
         {
             using (FileStream fsOut = LongFile.Exists(outFilePath) ?
             LongFile.GetFileStream(outFilePath) : new FileStream(LongFile.CreateFileForWrite(outFilePath), FileAccess.Write))
             {
-                WriteData(sIn, fsOut, length, inOffset, outOffset);
+                return WriteData(sIn, fsOut, length, inOffset, outOffset);
             }
         }
 
-        public static void WriteData(Stream sIn, Stream sOut, int length = -1, int inOffset = 0, int outOffset = 0)
+        public static int WriteData(Stream sIn, Stream sOut, int length = -1, int inOffset = 0, int outOffset = 0)
         {
             if (length == -1)
             {
@@ -82,16 +82,17 @@ namespace CpuGpuTool
                 sIn.Read(buffer, 0, to_read);
                 sOut.Write(buffer, 0, to_read);
             }
+            return length;
         }
 
-        public static void InsertData(Stream sIn, Stream sOut, int length = -1, int inOffset = 0, int outOffset = 0)
+        public static int InsertData(Stream sIn, Stream sOut, int length = -1, int inOffset = 0, int outOffset = 0)
         {
             if (length == -1)
             {
                 length = (int)sIn.Length - (inOffset != -1 ? inOffset : 0);
             }
             ExpandStream(sOut, outOffset, length);
-            WriteData(sIn, sOut, length, inOffset, outOffset);
+            return WriteData(sIn, sOut, length, inOffset, outOffset);
         }
 
         public static void ExpandStream(Stream s, int offset, int sizeIncrease)

@@ -52,6 +52,7 @@
             this.button3 = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.richTextBox1 = new CpuGpuTool.RichTextBoxEx();
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.cutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -70,7 +71,6 @@
             this.fromFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.insertDataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.replaceDataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.richTextBox1 = new CpuGpuTool.RichTextBoxEx();
             this.cPUDataToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.gPUDataToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.bothToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
@@ -270,7 +270,7 @@
             this.comboBox1.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
             this.comboBox1.Enabled = false;
             this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Location = new System.Drawing.Point(4, 37);
+            this.comboBox1.Location = new System.Drawing.Point(4, 39);
             this.comboBox1.Margin = new System.Windows.Forms.Padding(4);
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(191, 25);
@@ -344,6 +344,7 @@
             // 
             this.button3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.button3.Enabled = false;
+            this.button3.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.button3.Location = new System.Drawing.Point(0, 33);
             this.button3.Margin = new System.Windows.Forms.Padding(0);
             this.button3.Name = "button3";
@@ -378,6 +379,19 @@
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Details";
             // 
+            // richTextBox1
+            // 
+            this.richTextBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.richTextBox1.Font = new System.Drawing.Font("Consolas", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.richTextBox1.Location = new System.Drawing.Point(2, 20);
+            this.richTextBox1.Margin = new System.Windows.Forms.Padding(4);
+            this.richTextBox1.Name = "richTextBox1";
+            this.richTextBox1.ReadOnly = true;
+            this.richTextBox1.Size = new System.Drawing.Size(269, 426);
+            this.richTextBox1.TabIndex = 6;
+            this.richTextBox1.Text = "Please select an entry.";
+            this.richTextBox1.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.richTextBox1_LinkClicked);
+            // 
             // contextMenuStrip1
             // 
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -390,7 +404,7 @@
             this.saveToFileToolStripMenuItem,
             this.fromFileToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(181, 186);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(122, 164);
             // 
             // cutToolStripMenuItem
             // 
@@ -477,21 +491,21 @@
             // cpuDataToolStripMenuItem
             // 
             this.cpuDataToolStripMenuItem.Name = "cpuDataToolStripMenuItem";
-            this.cpuDataToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.cpuDataToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.cpuDataToolStripMenuItem.Text = "CPU Data";
             this.cpuDataToolStripMenuItem.Click += new System.EventHandler(this.CpuDataToolStripMenuItem_Click);
             // 
             // gpuDataToolStripMenuItem
             // 
             this.gpuDataToolStripMenuItem.Name = "gpuDataToolStripMenuItem";
-            this.gpuDataToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.gpuDataToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.gpuDataToolStripMenuItem.Text = "GPU Data";
             this.gpuDataToolStripMenuItem.Click += new System.EventHandler(this.GpuDataToolStripMenuItem_Click);
             // 
             // bothToolStripMenuItem
             // 
             this.bothToolStripMenuItem.Name = "bothToolStripMenuItem";
-            this.bothToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.bothToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.bothToolStripMenuItem.Text = "Both";
             this.bothToolStripMenuItem.Click += new System.EventHandler(this.BothToolStripMenuItem_Click);
             // 
@@ -501,14 +515,15 @@
             this.insertDataToolStripMenuItem,
             this.replaceDataToolStripMenuItem});
             this.fromFileToolStripMenuItem.Name = "fromFileToolStripMenuItem";
-            this.fromFileToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.fromFileToolStripMenuItem.Size = new System.Drawing.Size(121, 22);
             this.fromFileToolStripMenuItem.Text = "From file";
             // 
             // insertDataToolStripMenuItem
             // 
             this.insertDataToolStripMenuItem.Name = "insertDataToolStripMenuItem";
-            this.insertDataToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.insertDataToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
             this.insertDataToolStripMenuItem.Text = "Insert data";
+            this.insertDataToolStripMenuItem.Click += new System.EventHandler(this.insertDataToolStripMenuItem_Click);
             // 
             // replaceDataToolStripMenuItem
             // 
@@ -517,40 +532,27 @@
             this.gPUDataToolStripMenuItem1,
             this.bothToolStripMenuItem1});
             this.replaceDataToolStripMenuItem.Name = "replaceDataToolStripMenuItem";
-            this.replaceDataToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.replaceDataToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
             this.replaceDataToolStripMenuItem.Text = "Replace";
-            // 
-            // richTextBox1
-            // 
-            this.richTextBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.richTextBox1.Font = new System.Drawing.Font("Consolas", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.richTextBox1.Location = new System.Drawing.Point(2, 20);
-            this.richTextBox1.Margin = new System.Windows.Forms.Padding(4);
-            this.richTextBox1.Name = "richTextBox1";
-            this.richTextBox1.ReadOnly = true;
-            this.richTextBox1.Size = new System.Drawing.Size(269, 426);
-            this.richTextBox1.TabIndex = 6;
-            this.richTextBox1.Text = "Please select an entry.";
-            this.richTextBox1.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.richTextBox1_LinkClicked);
             // 
             // cPUDataToolStripMenuItem1
             // 
             this.cPUDataToolStripMenuItem1.Name = "cPUDataToolStripMenuItem1";
-            this.cPUDataToolStripMenuItem1.Size = new System.Drawing.Size(180, 22);
+            this.cPUDataToolStripMenuItem1.Size = new System.Drawing.Size(124, 22);
             this.cPUDataToolStripMenuItem1.Text = "CPU Data";
             this.cPUDataToolStripMenuItem1.Click += new System.EventHandler(this.cPUDataToolStripMenuItem1_Click);
             // 
             // gPUDataToolStripMenuItem1
             // 
             this.gPUDataToolStripMenuItem1.Name = "gPUDataToolStripMenuItem1";
-            this.gPUDataToolStripMenuItem1.Size = new System.Drawing.Size(180, 22);
+            this.gPUDataToolStripMenuItem1.Size = new System.Drawing.Size(124, 22);
             this.gPUDataToolStripMenuItem1.Text = "GPU Data";
             this.gPUDataToolStripMenuItem1.Click += new System.EventHandler(this.gPUDataToolStripMenuItem1_Click);
             // 
             // bothToolStripMenuItem1
             // 
             this.bothToolStripMenuItem1.Name = "bothToolStripMenuItem1";
-            this.bothToolStripMenuItem1.Size = new System.Drawing.Size(180, 22);
+            this.bothToolStripMenuItem1.Size = new System.Drawing.Size(124, 22);
             this.bothToolStripMenuItem1.Text = "Both";
             this.bothToolStripMenuItem1.Click += new System.EventHandler(this.bothToolStripMenuItem1_Click);
             // 
