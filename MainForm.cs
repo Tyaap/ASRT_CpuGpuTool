@@ -508,6 +508,8 @@ namespace CpuGpuTool
                         ((ToolStripMenuItem)contextMenuStrip1.Items["saveToFileToolStripMenuItem"]).DropDownItems["bothToolStripMenuItem"].Enabled = gpuDataAvailable;
 
                     ((ToolStripMenuItem)contextMenuStrip1.Items["fromFileToolStripMenuItem"]).DropDownItems["replaceDataToolStripMenuItem"].Enabled = (listView1.SelectedItems.Count == 1);
+                    ((ToolStripMenuItem)((ToolStripMenuItem)contextMenuStrip1.Items["fromFileToolStripMenuItem"]).DropDownItems["replaceDataToolStripMenuItem"]).DropDownItems["gPUDataToolStripMenuItem1"].Enabled = gpuDataAvailable;
+
 
                     contextMenuStrip1.Items["pasteToolStripMenuItem"].Enabled = (GetDataFromClipboard() != null);
 
