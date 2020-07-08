@@ -118,7 +118,7 @@ namespace CpuGpuTool
                 Resource resource = entry as Resource;
 
                 details += string.Format("----------- ASSET #{0} -----------", entry.entryNumber);
-                details += (node != null) ? "\nSumo Engine Node" : "\nSumo Loader Resource";
+                details += (node != null) ? "\nSumo Engine Node" : "\nSumo Libraries Resource";
                 details += string.Format("\nType: {0} ({0:X})", entry.dataType);
                 details += string.Format("\nAsset ID: {0:X8}", entry.id);
                 details += string.Format("\nName: {0}", entry.name, entry.id);
