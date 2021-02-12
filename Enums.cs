@@ -10,6 +10,7 @@ namespace CpuGpuTool
 
     public enum DataType
     {
+        [Description("SeRootNode")] SeRootNode = 0,
         [Description("Nothing?")] Nothing = 0x0EB411B1,
         [Description("SumoAvatarInstance")] SumoAvatarInstance = 0x00B9D617,
         [Description("JumboMapInstanceNode")] JumboMapInstanceNode = 0x0E7452E9,

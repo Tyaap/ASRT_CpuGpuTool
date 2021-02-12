@@ -55,16 +55,17 @@ namespace CpuGpuTool
         }
 
         public static void Parse(
-            Stream sCpuFile, 
-            out List<CpuEntry> entriesList, 
+            Stream sCpuFile,
+            out List<CpuEntry> entriesList,
             out Dictionary<uint, Resource> resourceDictionary,
             out Dictionary<uint, Node> nodeDictionary,
-            out HashSet<DataType> usedDataTypes, 
+            out HashSet<DataType> usedDataTypes,
             out bool isLittleEndian)
         {
-            entriesList = new List<CpuEntry>();
+            Node rootNode = new Node { dataType = DataType.SeRootNode, id = 0xC5952A50, entryNumber = 0, name = "Root" };
+            entriesList = new List<CpuEntry>() { rootNode }; ;
             resourceDictionary = new Dictionary<uint, Resource>();
-            nodeDictionary = new Dictionary<uint, Node>();
+            nodeDictionary = new Dictionary<uint, Node> { [0xC5952A50] = rootNode };
             usedDataTypes = new HashSet<DataType>();
 
             if (sCpuFile.Length == 0)
@@ -86,7 +87,7 @@ namespace CpuGpuTool
                     b.BaseStream.Seek(cpuOffset, SeekOrigin.Begin);
                     CpuEntry entry = new CpuEntry
                     {
-                        entryNumber = entriesList.Count + 1,
+                        entryNumber = entriesList.Count,
                         dataType = (DataType)b.ReadInt32(),
                         toolVersion = b.ReadInt32(),
                         cpuOffsetDataHeader = cpuOffset,
@@ -450,7 +451,7 @@ namespace CpuGpuTool
         public string SaveCpuData(int entryIndex, string outFolderPath)
         {
             CpuEntry entry = entriesList[entryIndex];
-            string start = entry.entryNumber + "_CPU_";
+            string start = "CPU_" + entry.dataType + "_";
             string end = Path.GetFileName(ReplaceInvalidChars(entry.name));
             string fileName = start + end.Substring(Math.Max(0, start.Length + end.Length - 255));
 
@@ -463,7 +464,9 @@ namespace CpuGpuTool
             CpuEntry entry = entriesList[entryIndex];
             if (entry.gpuDataLength > 0)
             {
-                string fileName = string.Format("{0}_GPU_{1}", entry.entryNumber, Path.GetFileName(ReplaceInvalidChars(entry.name)));
+                string start = "GPU_" + entry.dataType + "_";
+                string end = Path.GetFileName(ReplaceInvalidChars(entry.name));
+                string fileName = start + end.Substring(Math.Max(0, start.Length + end.Length - 255));
                 BinaryTools.WriteData(msGpuFile, Path.Combine(outFolderPath, fileName), entry.gpuDataLength, entry.gpuOffsetData);
                 return fileName;
             }

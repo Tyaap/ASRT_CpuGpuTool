@@ -83,7 +83,7 @@
     </Compile>
     <Compile Include="EndiannessAwareBinaryWriter.cs" />
     <Compile Include="EndiannessAwareBinaryReader.cs" />
-    <Compile Include="EnumExtensions.cs" />
+    <Compile Include="Extensions.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="LongFile.cs" />
     <Compile Include="MainForm.cs">
