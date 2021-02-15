@@ -35,8 +35,7 @@ namespace CpuGpuTool
         public static int WriteData(string inFilePath, string outFilePath, int length = -1, int inOffset = 0, int outOffset = 0)
         {
             using (FileStream fsIn = LongFile.GetFileStream(inFilePath))
-            using (FileStream fsOut = LongFile.Exists(outFilePath) ? 
-                LongFile.GetFileStream(outFilePath) : new FileStream(LongFile.CreateFileForWrite(outFilePath), FileAccess.Write))
+            using (FileStream fsOut = new FileStream(LongFile.CreateFileForWrite(outFilePath), FileAccess.Write))
             {
                 return WriteData(fsIn, fsOut, length, inOffset, outOffset);
             }
@@ -52,8 +51,7 @@ namespace CpuGpuTool
 
         public static int WriteData(Stream sIn, string outFilePath, int length = -1, int inOffset = 0, int outOffset = 0)
         {
-            using (FileStream fsOut = LongFile.Exists(outFilePath) ?
-            LongFile.GetFileStream(outFilePath) : new FileStream(LongFile.CreateFileForWrite(outFilePath), FileAccess.Write))
+            using (FileStream fsOut = new FileStream(LongFile.CreateFileForWrite(outFilePath), FileAccess.Write))
             {
                 return WriteData(sIn, fsOut, length, inOffset, outOffset);
             }

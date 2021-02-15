@@ -12,11 +12,13 @@ namespace CpuGpuTool
         public CpuFile cpuFile = new CpuFile();
         public string nameFilter = "";
         public string typeFilter = "";
+        public HashSet<int> hiddenAssetNums = new HashSet<int>();
+        public Dictionary<int, ListViewItem> assetNumberToListViewItem = new Dictionary<int, ListViewItem>();
         public Timer listSelectTimer = new Timer();
         public string lastCpuFilePath = "";
         public string lastDataSavePath = "";
         public string lastDataOpenPath = "";
-        Dictionary<uint, Tuple<int, EntryType>> entryLinks = new Dictionary<uint, Tuple<int, EntryType>>();
+        Dictionary<string, Tuple<int, Asset>> assetLinks = new Dictionary<string, Tuple<int, Asset>>();
 
         public MainForm()
         {
@@ -71,16 +73,19 @@ namespace CpuGpuTool
             List<ListViewItem> items = new List<ListViewItem>();
             for (int i = 0; i < nEntries; i++)
             {
-                CpuEntry entry = cpuFile[i];
-                if (entry.name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase) && 
+                Asset entry = cpuFile[i];
+                if (!hiddenAssetNums.Contains(entry.assetNumber) &&
+                    entry.name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase) && 
                     entry.dataType.GetDescription().Contains(typeFilter, StringComparison.OrdinalIgnoreCase))
                 {
-                    items.Add(new ListViewItem(new string[]
+                    ListViewItem item = new ListViewItem(new string[]
                     {
-                        entry.entryNumber.ToString(),
+                        entry.assetNumber.ToString(),
                         entry.dataType.GetDescription(),
                         entry.name
-                    }));
+                    });
+                    items.Add(item);
+                    assetNumberToListViewItem[entry.assetNumber] = item;
                 }
             }
             AddListViewItems(listView1, items.ToArray());
@@ -113,15 +118,15 @@ namespace CpuGpuTool
         public void RefreshDetailsText(object sender = null, EventArgs e = null)
         {
             string details = "";
-            entryLinks.Clear();
+            assetLinks.Clear();
             int count = Math.Min(listView1.SelectedItems.Count, 100);
             for (int i = 0; i < count; i++)
             {
-                CpuEntry entry = cpuFile[int.Parse(listView1.SelectedItems[i].Text)];
+                Asset entry = cpuFile[int.Parse(listView1.SelectedItems[i].Text)];
                 Node node = entry as Node;
                 Resource resource = entry as Resource;
 
-                details += string.Format("----------- ASSET #{0} -----------", entry.entryNumber);
+                details += string.Format("----------- ASSET #{0} -----------", entry.assetNumber);
                 details += (node != null) ? "\nSumo Engine Node" : "\nSumo Libraries Resource";
                 details += string.Format("\nType: {0} ({0:X})", entry.dataType);
                 details += string.Format("\nAsset ID: {0:X8}", entry.id);
@@ -131,7 +136,7 @@ namespace CpuGpuTool
                     details += string.Format("\nShort name: {0}", node.shortName, entry.id);
                 }
 
-                if (entry.dataType != DataType.SeRootNode)
+                if (entry.dataType != DataType.SeRootFolderNode)
                 {
                     details += "\n\n~~~ File Offsets ~~~";
                     details += string.Format("\nCPU: 0x{0:X}", entry.cpuOffsetDataHeader);
@@ -147,47 +152,35 @@ namespace CpuGpuTool
 
                 if (node != null)
                 {
-                    if (node.definition != null || node.parent != null || node.daughters.Count > 0 || node.instances.Count > 0)
+                    if (node.definition.Count > 0 || node.parent.Count > 0 || node.daughters.Count > 0 || node.instances.Count > 0)
                     {
                         details += "\n\n~~~ Node Links ~~~";
                     }
-                    if (node.definition != null)
+                    if (node.definition.Count > 0)
                     {
-                        details += "\nDefinition: ";
-                        AddEntryLink(ref details, node.definition);
+                        details += "\nDefinition:\n";
+                        AddEntryLink(ref details, node.definition[0]);
                     }
-                    if (node.parent != null)
+                    if (node.parent.Count > 0)
                     {
-                        details += "\nParent: ";
-                        AddEntryLink(ref details, node.parent);
+                        details += "\nParent:\n";
+                        AddEntryLink(ref details, node.parent[0]);
                     }
-                    if (node.daughters.Count == 1)
-                    {
-                        details += "\nDaughter: ";
-                        AddEntryLink(ref details, node.daughters.Values.Single());
-
-                    }
-                    if (node.daughters.Count > 1)
+                    if (node.daughters.Count > 0)
                     {
                         details += "\nDaughters:";
-                        foreach (Node n in node.daughters.Values)
+                        foreach (Node n in node.daughters)
                         {
-                            details += "\n    ";
+                            details += "\n";
                             AddEntryLink(ref details, n);
                         }
                     }
-                    if (node.instances.Count == 1)
-                    {
-                        details += "\nInstance: ";
-                        AddEntryLink(ref details, node.instances.Values.Single());
-                    }
-                    if (node.instances.Count > 1)
+                    if (node.instances.Count > 0)
                     {
                         details += string.Format("\nInstances:");
-                        int count2 = node.instances.Count;
-                        foreach(Node n in node.instances.Values)
+                        foreach(Node n in node.instances)
                         {
-                            details += "\n    ";
+                            details += "\n";
                             AddEntryLink(ref details, n);
                         }
                     }
@@ -206,7 +199,7 @@ namespace CpuGpuTool
 
                 if (i != count - 1)
                 {
-                    details += "\n\n";
+                    details += "\n\n\n";
                 }
             }
             if (listView1.SelectedItems.Count > 100)
@@ -219,65 +212,68 @@ namespace CpuGpuTool
             }
             richTextBox1.Clear();
             richTextBox1.Text = details;
-            FormatEntryLinks();
+            FormatAssetLinks();
         }
 
-        private void AddEntryLink(ref string details, CpuEntry entry)
+        private void AddEntryLink(ref string details, Asset entry, int maxLength = 0)
         {
-            entryLinks[entry.id] = new Tuple<int, EntryType>(details.Length, entry as Node != null ? EntryType.Node : EntryType.Resource);
-            details += entry.id.ToString("X8");
+            string linkText;
+            if (entry.assetNumber != -1)
+            {
+                linkText = "#" + entry.assetNumber + " " + entry.name;
+            }
+            else
+            {
+                linkText = entry.id.ToString("X8");
+            }
+            if (maxLength > 0)
+            {
+                TruncateString(ref linkText, maxLength);
+            }
+            if (!assetLinks.ContainsKey(linkText))
+            {
+                assetLinks[linkText] = new Tuple<int, Asset>(details.Length, entry);
+            }
+            details += linkText;
         }
 
-        private void FormatEntryLinks()
+        private void FormatAssetLinks()
         {
-            foreach (var link in entryLinks)
+            foreach (var link in assetLinks)
             {
                 int position = link.Value.Item1;
                 richTextBox1.SelectionStart = position;
-                richTextBox1.Select(position, 8);
+                richTextBox1.Select(position, link.Key.Length);
                 richTextBox1.SetSelectionLink(true);
-                richTextBox1.Select(position + 8, 0);
+                richTextBox1.Select(position + link.Key.Length, 0);
             }
         }
 
-        private void AddRefs(ref string details, uint entryId, Dictionary<uint, CpuEntry> refs)
+        private void AddRefs(ref string details, uint entryId, List<Asset> refs)
         {
             if (refs.Count == 0)
             {
                 return;
             }
-            foreach (var entries in refs.Values.GroupBy(x => x.dataType))
+            HashSet<uint> ids = new HashSet<uint>();
+            foreach (var entries in refs.GroupBy(x => x.dataType))
             {
                 details += string.Format("\n{0}: ", entries.Key);
-                foreach (CpuEntry entry in entries)
+                foreach (Asset entry in entries)
                 {
-                    details += "\n    ";
+                    if (ids.Contains(entry.id))
+                    {
+                        continue;
+                    }
+                    details += "\n";
                     AddEntryLink(ref details, entry);
+                    /*
                     if (entryId == entry.id)
                     {
                         details += " (same ID)";
                     }
-                }
-            }
-        }
-
-        private void AddReferees(ref string details, Resource resource)
-        {
-            if (resource.referees.Count == 0)
-            {
-                return;
-            }
-            foreach (var entries in resource.referees.Values.GroupBy(x => x.dataType))
-            {
-                details += string.Format("\n{0}: ", entries.Key);
-                foreach (CpuEntry entry in entries)
-                {
-                    details += "\n    ";
-                    AddEntryLink(ref details, entry);
-                    if (resource.id == entry.id)
-                    {
-                        details += " (same ID)";
-                    }
+                    */
+                    ids.Add(entry.id);
                 }
             }
         }
@@ -372,6 +368,10 @@ namespace CpuGpuTool
                     for (int i = 0; i < count; i++)
                     {
                         int entryIndex = int.Parse(listView1.SelectedItems[i].Text);
+                        if (entryIndex == 0)
+                        {
+                            continue;
+                        }
                         if (cpuData)
                         {
                             fileNames.Add(cpuFile.SaveCpuData(entryIndex, folderBrowserDialog.SelectedPath));
@@ -397,8 +397,8 @@ namespace CpuGpuTool
 
         private void richTextBox1_LinkClicked(object sender, LinkClickedEventArgs e)
         {
-            ParseHexString(e.LinkText, out uint id);
-            SelectEntryByID(id, entryLinks[id].Item2);
+            Asset asset = assetLinks[e.LinkText].Item2;
+            SelectAssetByID(asset.id, asset as Node != null ? EntryType.Node : EntryType.Resource);
         }
 
         private void IDSearch(EntryType entryType)
@@ -414,7 +414,7 @@ namespace CpuGpuTool
                         MessageBox.Show("Invalid ID!\nYou must enter a 32bit hex number.", "Invalid ID!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
-                    SelectEntryByID(id, entryType);
+                    SelectAssetByID(id, entryType);
                 }
             }
         }
@@ -438,60 +438,93 @@ namespace CpuGpuTool
             return uint.TryParse(idString, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out id);
         }
 
-        private void SelectEntryByID(uint id, EntryType type = (EntryType)3) // Default search type: nodes + resources
+        private void SelectAssetByID(uint id, EntryType type = (EntryType)3) // Default search type: nodes + resources
         {
-            CpuEntry entry;
             switch (type)
             {
                 case EntryType.Node:
-                    if (!cpuFile.nodeDictionary.TryGetValue(id, out Node node))
+                    if (cpuFile.nodeDictionary.TryGetValue(id, out List<Node> nodes))
+                    {
+                        SelectAssetsInList(nodes);
+                    }
+                    else
                     {
                         MessageBox.Show("Node not found!\nIt may exist in a different CPU file.",
-                        "Not found!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
+                            "Not found!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
-                    entry = node;
-                    break;
+                    return;
                 case EntryType.Resource:
-                    if (!cpuFile.resourceDictionary.TryGetValue(id, out Resource resource))
+                    if (cpuFile.resourceDictionary.TryGetValue(id, out List<Resource> resources))
+                    {
+                        SelectAssetsInList(resources);
+                    }
+                    else
                     {
                         MessageBox.Show("Resource not found!\nIt may exist in a different CPU file.",
                             "Not found!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
                     }
-                    entry = resource;
-                    break;
+                    return;
                 default:
-                    if (cpuFile.nodeDictionary.TryGetValue(id, out node))
+                    if (cpuFile.nodeDictionary.TryGetValue(id, out nodes))
                     {
-                        entry = node;
+                        SelectAssetsInList(nodes);
                     }
-                    else if (cpuFile.resourceDictionary.TryGetValue(id, out resource))
+                    else if (cpuFile.resourceDictionary.TryGetValue(id, out resources))
                     {
-                        entry = resource;
+                        SelectAssetsInList(resources);
                     }
                     else
                     {
                         MessageBox.Show("Entry not found!\nIt may exist in a different CPU file.",
                             "Not found!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
                     }
-                    break;
+                    return;
+            }
+        }
+
+        private void SelectAssetsInList<T>(ICollection<T> assets) where T : Asset
+        {
+            if (assets.Count == 0)
+            {
+                return;
             }
 
-            // Clear other searches
-            typeFilter = "";
-            nameFilter = "";
-            RefreshCpuEntryList();
-            RefreshEntryStatus();
+            // Unhide assets that need selecting
+            int nHiddenAssets = hiddenAssetNums.Count;
+            if (nHiddenAssets > 0)
+            {
+                foreach (Asset asset in assets)
+                {
+                    hiddenAssetNums.Remove(asset.assetNumber);
+                }
+            }
 
-            var item = listView1.Items[entry.entryNumber];
+            // Remove list filtering
             listView1.SelectedItems.Clear();
-            item.Selected = true;
-            item.Focused = true;
-            item.EnsureVisible();
+            if (typeFilter != "" || nameFilter != "" || nHiddenAssets != hiddenAssetNums.Count)
+            {
+                typeFilter = "";
+                nameFilter = "";
+                RefreshCpuEntryList();
+            }
+            int count = 0;
+            foreach(Asset asset in assets)
+            {
+                if (asset.assetNumber == -1)
+                {
+                    continue;
+                }
+                if (assetNumberToListViewItem.TryGetValue(asset.assetNumber, out ListViewItem item))
+                {
+                    item.Selected = true;
+                    if (count++ == 0)
+                    {
+                        item.Focused = true;
+                        item.EnsureVisible();
+                    }
+                }
+            }
             listView1.Select();
-            return;
         }
 
         private void listView1_MouseClick(object sender, MouseEventArgs e)
@@ -501,39 +534,8 @@ namespace CpuGpuTool
                 if (listView1.FocusedItem.Bounds.Contains(e.Location))
                 {
                     int count = listView1.SelectedItems.Count;
-                    bool gpuDataAvailable = false;
-                    bool allNodesHaveDefinitions = true;
-                    bool allNodesHaveParents = true;
-                    bool containsRootNode = false;
-                    for (int i = 0; i < count; i++)
-                    {
-                        int entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text);
-                        if(entryIndex == 0)
-                        {
-                            containsRootNode = true;
-                            break;
-                        }
-                        if (!gpuDataAvailable && cpuFile[entryIndex].gpuDataLength > 0)
-                        {
-                            gpuDataAvailable = true;
-                        }
-                        Node node = cpuFile[entryIndex] as Node;
-                        if (allNodesHaveDefinitions && (node == null || node.definition == null))
-                        {
-                            allNodesHaveDefinitions = false;
-                        }
-                        if (allNodesHaveParents && (node == null || node.parent == null))
-                        {
-                            allNodesHaveParents = false;
-                        }
-                        if (gpuDataAvailable && !allNodesHaveDefinitions && !allNodesHaveParents)
-                        {
-                            break;
-                        }
-                    }
 
-
-                    if (containsRootNode)
+                    if (count == 1 && int.Parse(listView1.SelectedItems[0].SubItems[0].Text) == 0) // Only root node selected
                     {
                         ((ToolStripMenuItem)contextMenuStrip1.Items["cutToolStripMenuItem"]).Enabled = false;
                         ((ToolStripMenuItem)contextMenuStrip1.Items["copyToolStripMenuItem"]).Enabled = false;
@@ -541,25 +543,51 @@ namespace CpuGpuTool
                         ((ToolStripMenuItem)contextMenuStrip1.Items["editToolStripMenuItem"]).Enabled = false;
                         ((ToolStripMenuItem)contextMenuStrip1.Items["saveToFileToolStripMenuItem"]).Enabled = false;
                         ((ToolStripMenuItem)contextMenuStrip1.Items["fromFileToolStripMenuItem"]).DropDownItems["replaceDataToolStripMenuItem"].Enabled = false;
+                        contextMenuStrip1.Show(Cursor.Position);
+                        return;
                     }
-                    else
+
+                    bool gpuDataAvailable = false;
+                    bool allNodes = true;
+                    bool allNodesHaveDefinitions = true;
+                    for (int i = 0; i < count; i++)
                     {
-                        ((ToolStripMenuItem)contextMenuStrip1.Items["cutToolStripMenuItem"]).Enabled = true;
-                        ((ToolStripMenuItem)contextMenuStrip1.Items["copyToolStripMenuItem"]).Enabled = true;
-                        ((ToolStripMenuItem)contextMenuStrip1.Items["deleteToolStripMenuItem"]).Enabled = true;
-                        ((ToolStripMenuItem)contextMenuStrip1.Items["editToolStripMenuItem"]).Enabled = true;
-                        ((ToolStripMenuItem)contextMenuStrip1.Items["saveToFileToolStripMenuItem"]).Enabled = true;
-                        ((ToolStripMenuItem)contextMenuStrip1.Items["fromFileToolStripMenuItem"]).DropDownItems["replaceDataToolStripMenuItem"].Enabled = true;
-
-                        ((ToolStripMenuItem)contextMenuStrip1.Items["editToolStripMenuItem"]).DropDownItems["changeDefinitionToolStripMenuItem"].Enabled = allNodesHaveDefinitions;
-                        ((ToolStripMenuItem)contextMenuStrip1.Items["editToolStripMenuItem"]).DropDownItems["changeParentToolStripMenuItem"].Enabled = allNodesHaveParents;
-
-                        ((ToolStripMenuItem)contextMenuStrip1.Items["saveToFileToolStripMenuItem"]).DropDownItems["gpuDataToolStripMenuItem"].Enabled = gpuDataAvailable;
-                        ((ToolStripMenuItem)contextMenuStrip1.Items["saveToFileToolStripMenuItem"]).DropDownItems["bothToolStripMenuItem"].Enabled = gpuDataAvailable;
-
-                        ((ToolStripMenuItem)contextMenuStrip1.Items["fromFileToolStripMenuItem"]).DropDownItems["replaceDataToolStripMenuItem"].Enabled = (listView1.SelectedItems.Count == 1);
-                        ((ToolStripMenuItem)((ToolStripMenuItem)contextMenuStrip1.Items["fromFileToolStripMenuItem"]).DropDownItems["replaceDataToolStripMenuItem"]).DropDownItems["gPUDataToolStripMenuItem1"].Enabled = gpuDataAvailable;
+                        Asset asset = cpuFile[int.Parse(listView1.SelectedItems[i].SubItems[0].Text)];
+                        if (!gpuDataAvailable && asset.gpuDataLength > 0)
+                        {
+                            gpuDataAvailable = true;
+                        }
+                        Node node = asset as Node;
+                        if (allNodes && node == null)
+                        {
+                            allNodes = false;
+                        }
+                        if (allNodesHaveDefinitions && (!allNodes || node.definition.Count == 0))
+                        {
+                            allNodesHaveDefinitions = false;
+                        }
+                        if (gpuDataAvailable && !allNodes && !allNodesHaveDefinitions)
+                        {
+                            break;
+                        }
                     }
+
+
+                    ((ToolStripMenuItem)contextMenuStrip1.Items["cutToolStripMenuItem"]).Enabled = true;
+                    ((ToolStripMenuItem)contextMenuStrip1.Items["copyToolStripMenuItem"]).Enabled = true;
+                    ((ToolStripMenuItem)contextMenuStrip1.Items["deleteToolStripMenuItem"]).Enabled = true;
+                    ((ToolStripMenuItem)contextMenuStrip1.Items["editToolStripMenuItem"]).Enabled = true;
+                    ((ToolStripMenuItem)contextMenuStrip1.Items["saveToFileToolStripMenuItem"]).Enabled = true;
+                    ((ToolStripMenuItem)contextMenuStrip1.Items["fromFileToolStripMenuItem"]).DropDownItems["replaceDataToolStripMenuItem"].Enabled = true;
+
+                    ((ToolStripMenuItem)contextMenuStrip1.Items["editToolStripMenuItem"]).DropDownItems["changeParentToolStripMenuItem"].Enabled = allNodes;
+                    ((ToolStripMenuItem)contextMenuStrip1.Items["editToolStripMenuItem"]).DropDownItems["changeDefinitionToolStripMenuItem"].Enabled = allNodesHaveDefinitions;
+
+                    ((ToolStripMenuItem)contextMenuStrip1.Items["saveToFileToolStripMenuItem"]).DropDownItems["gpuDataToolStripMenuItem"].Enabled = gpuDataAvailable;
+                    ((ToolStripMenuItem)contextMenuStrip1.Items["saveToFileToolStripMenuItem"]).DropDownItems["bothToolStripMenuItem"].Enabled = gpuDataAvailable;
+
+                    ((ToolStripMenuItem)contextMenuStrip1.Items["fromFileToolStripMenuItem"]).DropDownItems["replaceDataToolStripMenuItem"].Enabled = (listView1.SelectedItems.Count == 1);
+                    ((ToolStripMenuItem)((ToolStripMenuItem)contextMenuStrip1.Items["fromFileToolStripMenuItem"]).DropDownItems["replaceDataToolStripMenuItem"]).DropDownItems["gPUDataToolStripMenuItem1"].Enabled = gpuDataAvailable;
 
 
                     contextMenuStrip1.Items["pasteToolStripMenuItem"].Enabled = (GetDataFromClipboard() != null);
@@ -593,6 +621,10 @@ namespace CpuGpuTool
             for (int i = 0; i < count; i++)
             {
                 int entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text);
+                if (entryIndex == 0)
+                {
+                    continue;
+                }
                 cpuFile.GetCpuData(entryIndex, cpuData, -1);
                 cpuFile.GetGpuData(entryIndex, gpuData, -1);
             }
@@ -619,6 +651,10 @@ namespace CpuGpuTool
             for (int i = count - 1; i >= 0; i--) // Process in reverse order, to ensure offsets do not change while modifying
             {
                 int entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text);
+                if (entryIndex == 0)
+                {
+                    continue;
+                }
                 cpuFile.DeleteCpuData(entryIndex);
                 cpuFile.DeleteGpuData(entryIndex);
             }
@@ -666,6 +702,10 @@ namespace CpuGpuTool
                     for (int i = 0; i < count; i++)
                     {
                         int entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text);
+                        if (entryIndex == 0)
+                        {
+                            continue;
+                        }
                         cpuFile.ChangeEntryName(int.Parse(listView1.SelectedItems[i].Text), dialog.textBox1.Text);
                     }
                     cpuFile.Reload();
@@ -692,6 +732,10 @@ namespace CpuGpuTool
                         for (int i = 0; i < count; i++)
                         {
                             entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text);
+                            if (entryIndex == 0)
+                            {
+                                continue;
+                            }
                             cpuFile.ChangeEntryID(entryIndex, id);
                         }
                         cpuFile.Reload();
@@ -708,7 +752,11 @@ namespace CpuGpuTool
             using (DialogBoxTextEntry dialog = new DialogBoxTextEntry())
             {
                 dialog.Text = "Choose a definition ID";
-                dialog.textBox1.Text = (cpuFile[entryIndex] as Node).definition.id.ToString("X8");
+                Node node = cpuFile[entryIndex] as Node;
+                if (node.definition.Count > 0)
+                {
+                    dialog.textBox1.Text = (cpuFile[entryIndex] as Node).definition[0].id.ToString("X8");
+                }
                 dialog.button1.Text = "Confirm";
 
                 if (dialog.ShowDialog() == DialogResult.OK)
@@ -719,6 +767,10 @@ namespace CpuGpuTool
                         for (int i = 0; i < count; i++)
                         {
                             entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text);
+                            if (entryIndex == 0)
+                            {
+                                continue;
+                            }
                             cpuFile.ChangeDefinitionID(entryIndex, id);
                         }
                         cpuFile.Reload();
@@ -735,7 +787,11 @@ namespace CpuGpuTool
             using (DialogBoxTextEntry dialog = new DialogBoxTextEntry())
             {
                 dialog.Text = "Choose a parent ID";
-                dialog.textBox1.Text = (cpuFile[entryIndex] as Node).parent.id.ToString("X8");
+                Node node = cpuFile[entryIndex] as Node;
+                if (node.parent.Count > 0)
+                {
+                    dialog.textBox1.Text = (cpuFile[entryIndex] as Node).parent[0].id.ToString("X8");
+                }      
                 dialog.button1.Text = "Confirm";
 
                 if (dialog.ShowDialog() == DialogResult.OK)
@@ -746,6 +802,10 @@ namespace CpuGpuTool
                         for (int i = 0; i < count; i++)
                         {
                             entryIndex = int.Parse(listView1.SelectedItems[i].SubItems[0].Text);
+                            if (entryIndex == 0)
+                            {
+                                continue;
+                            }
                             cpuFile.ChangeParentID(entryIndex, id);
                         }
                         cpuFile.Reload();
@@ -845,7 +905,7 @@ namespace CpuGpuTool
                 {
                     return;
                 }
-                CpuEntry lastEntry = tmpCpuFile.entriesList.Last();
+                Asset lastEntry = tmpCpuFile.entriesList.Last();
                 if (lastEntry.gpuOffsetData + lastEntry.gpuRelativeOffsetNextEntry > 0)
                 {
                     fileDialog.Title = "Select GPU data file";
@@ -875,5 +935,130 @@ namespace CpuGpuTool
             }
         }
 
+        private void parentToolStripMenuItem_Click(object sender, EventArgs e)
+        {    
+            List<Node> parents = new List<Node>();
+            foreach(ListViewItem item in listView1.SelectedItems)
+            {
+                Node node = cpuFile[int.Parse(item.SubItems[0].Text)] as Node;
+                if (node != null)
+                {
+                    parents.AddRange(node.parent);
+                }
+            }
+            SelectAssetsInList(parents);
+        }
+
+        private void daughtersToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            List<Node> daughters = new List<Node>();
+            foreach (ListViewItem item in listView1.SelectedItems)
+            {
+                Node node = cpuFile[int.Parse(item.SubItems[0].Text)] as Node;
+                if (node != null)
+                {
+                    daughters.AddRange(node.daughters);
+                }
+            }       
+            SelectAssetsInList(daughters);
+        }
+
+        private void dependeiciesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            List<Asset> dependencies = new List<Asset>();
+            foreach (ListViewItem item in listView1.SelectedItems)
+            {
+                Asset asset = cpuFile[int.Parse(item.SubItems[0].Text)];
+                ColectDependencies(asset, dependencies);
+            }
+            SelectAssetsInList(dependencies);
+        }
+
+        private void ColectDependencies(Asset asset, List<Asset> outList)
+        {
+            foreach(Asset reference in asset.references)
+            {
+                outList.Add(reference);
+                ColectDependencies(reference, outList);
+            }
+            Node node = asset as Node;
+            if (node != null)
+            {
+                foreach(Node definition in node.definition)
+                {
+                    outList.Add(definition);
+                    ColectDependencies(definition, outList);
+                }
+                foreach(Node daughter in node.daughters)
+                {
+                    outList.Add(daughter);
+                    ColectDependencies(daughter, outList);
+                }
+            }
+        }
+
+        private void definitionToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            List<Node> definitions = new List<Node>();
+            foreach (ListViewItem item in listView1.SelectedItems)
+            {
+                Node node = cpuFile[int.Parse(item.SubItems[0].Text)] as Node;
+                if (node != null)
+                {
+                    definitions.AddRange(node.definition);
+                }
+            }
+            SelectAssetsInList(definitions);
+        }
+
+        private void instancesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            List<Node> instances = new List<Node>();
+            foreach (ListViewItem item in listView1.SelectedItems)
+            {
+                Node node = cpuFile[int.Parse(item.SubItems[0].Text)] as Node;
+                if (node != null)
+                {
+                    instances.AddRange(node.instances);
+                }
+            }
+            SelectAssetsInList(instances);
+        }
+
+        public static void TruncateString(ref string s, int maxlength)
+        {
+            if (s.Length > maxlength)
+            {
+                s = s.Substring(0, maxlength - 3) + "...";
+            }
+        }
+
+        private void selectedEntriesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            foreach (ListViewItem item in listView1.SelectedItems)
+            {
+                hiddenAssetNums.Add(int.Parse(item.SubItems[0].Text));
+            }
+            RefreshCpuEntryList();
+            RefreshEntryStatus();
+        }
+
+        private void unhideAllToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            hiddenAssetNums.Clear();
+            RefreshCpuEntryList();
+        }
+
+        private void unselectedEntriesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            foreach (ListViewItem item in listView1.Items)
+            {
+                if (!item.Selected)
+                {
+                    hiddenAssetNums.Add(int.Parse(item.SubItems[0].Text));
+                }
+            }
+            RefreshCpuEntryList();
+        }
     }
 }

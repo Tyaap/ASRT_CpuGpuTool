@@ -1,10 +1,14 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 
 namespace CpuGpuTool
 {
-    public class CpuEntry
+    public class Asset
     {
-        public int entryNumber;
+        // todo: more subclasses of asset
+        public MemoryStream msCpuData; // todo: individual memory streams for each asset
+        public MemoryStream msGpuData; // todo: individual memory streams for each asset
+        public int assetNumber = -1;
         public DataType dataType;
         public int toolVersion;
         public int cpuOffsetDataHeader;
@@ -20,8 +24,8 @@ namespace CpuGpuTool
         public int unknown;
         public string name;
         public uint id;
-        public Dictionary<uint, CpuEntry> references = new Dictionary<uint, CpuEntry>();
-        public Dictionary<uint, CpuEntry> referees = new Dictionary<uint, CpuEntry>();
+        public List<Asset> references = new List<Asset>();
+        public List<Asset> referees = new List<Asset>();
 
         public override int GetHashCode()
         {
@@ -30,17 +34,17 @@ namespace CpuGpuTool
 
         public override bool Equals(object obj)
         {
-            CpuEntry entry = obj as CpuEntry;
+            Asset entry = obj as Asset;
             return entry != null && entry.id == id;
         }
     }
 
-    public class Node : CpuEntry
+    public class Node : Asset
     {
         public Node() { }
-        public Node(CpuEntry entry)
+        public Node(Asset entry)
         {
-            entryNumber = entry.entryNumber;
+            assetNumber = entry.assetNumber;
             dataType = entry.dataType;
             toolVersion = entry.toolVersion;
             cpuOffsetDataHeader = entry.cpuOffsetDataHeader;
@@ -59,18 +63,18 @@ namespace CpuGpuTool
         }
 
         public string shortName;
-        public Node definition;
-        public Node parent;
-        public Dictionary<uint, Node> daughters = new Dictionary<uint, Node>();
-        public Dictionary<uint, Node> instances = new Dictionary<uint, Node>();
+        public List<Node> definition = new List<Node>();
+        public List<Node> parent = new List<Node>();
+        public List<Node> daughters = new List<Node>();
+        public List<Node> instances = new List<Node>();
     }
 
-    public class Resource : CpuEntry
+    public class Resource : Asset
     {
         public Resource() { }
-        public Resource(CpuEntry entry)
+        public Resource(Asset entry)
         {
-            entryNumber = entry.entryNumber;
+            assetNumber = entry.assetNumber;
             dataType = entry.dataType;
             toolVersion = entry.toolVersion;
             cpuOffsetDataHeader = entry.cpuOffsetDataHeader;

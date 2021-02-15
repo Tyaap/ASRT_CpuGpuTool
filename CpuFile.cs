@@ -12,9 +12,9 @@ namespace CpuGpuTool
         public string gpuFilePath;
         public MemoryStream msCpuFile;
         public MemoryStream msGpuFile;
-        public List<CpuEntry> entriesList;
-        public Dictionary<uint, Node> nodeDictionary;
-        public Dictionary<uint, Resource> resourceDictionary;
+        public List<Asset> entriesList;
+        public Dictionary<uint, List<Node>> nodeDictionary;
+        public Dictionary<uint, List<Resource>> resourceDictionary;
         public HashSet<DataType> usedDataTypes;
         public static readonly char[] invalidCharacters = { ':', '*', '?', '<', '>', '|' };
         public bool isLittleEndian;
@@ -25,9 +25,9 @@ namespace CpuGpuTool
             gpuFilePath = "";
             msCpuFile = new MemoryStream();
             msGpuFile = new MemoryStream();
-            entriesList = new List<CpuEntry>();
-            nodeDictionary = new Dictionary<uint, Node>();
-            resourceDictionary = new Dictionary<uint, Resource>();
+            entriesList = new List<Asset>();
+            nodeDictionary = new Dictionary<uint, List<Node>>();
+            resourceDictionary = new Dictionary<uint, List<Resource>>();
         }
         public CpuFile(string filePath)
         {
@@ -44,7 +44,7 @@ namespace CpuGpuTool
             Parse(msCpuFile, out entriesList, out resourceDictionary, out nodeDictionary, out usedDataTypes, out isLittleEndian);
         }
 
-        public CpuEntry this[int index]
+        public Asset this[int index]
         {
             get => entriesList[index];
         }
@@ -56,16 +56,16 @@ namespace CpuGpuTool
 
         public static void Parse(
             Stream sCpuFile,
-            out List<CpuEntry> entriesList,
-            out Dictionary<uint, Resource> resourceDictionary,
-            out Dictionary<uint, Node> nodeDictionary,
+            out List<Asset> entriesList,
+            out Dictionary<uint, List<Resource>> resourceDictionary,
+            out Dictionary<uint, List<Node>> nodeDictionary,
             out HashSet<DataType> usedDataTypes,
             out bool isLittleEndian)
         {
-            Node rootNode = new Node { dataType = DataType.SeRootNode, id = 0xC5952A50, entryNumber = 0, name = "Root" };
-            entriesList = new List<CpuEntry>() { rootNode }; ;
-            resourceDictionary = new Dictionary<uint, Resource>();
-            nodeDictionary = new Dictionary<uint, Node> { [0xC5952A50] = rootNode };
+            Node rootNode = new Node { dataType = DataType.SeRootFolderNode, id = 0xC5952A50, assetNumber = 0, name = "RootFolder" };
+            entriesList = new List<Asset> { rootNode };
+            resourceDictionary = new Dictionary<uint, List<Resource>>();
+            nodeDictionary = new Dictionary<uint, List<Node>> { {0xC5952A50, new List<Node> { rootNode } } };
             usedDataTypes = new HashSet<DataType>();
 
             if (sCpuFile.Length == 0)
@@ -85,9 +85,9 @@ namespace CpuGpuTool
                 while (cpuOffset < b.BaseStream.Length)
                 {
                     b.BaseStream.Seek(cpuOffset, SeekOrigin.Begin);
-                    CpuEntry entry = new CpuEntry
+                    Asset entry = new Asset
                     {
-                        entryNumber = entriesList.Count,
+                        assetNumber = entriesList.Count,
                         dataType = (DataType)b.ReadInt32(),
                         toolVersion = b.ReadInt32(),
                         cpuOffsetDataHeader = cpuOffset,
@@ -102,13 +102,14 @@ namespace CpuGpuTool
                     };
 
                     int tmpOffset;
+                    uint id;
                     if (b.ReadBoolean()) // Entry type
                     {
                         Resource resource = new Resource(entry);
                         entry = resource;
 
                         resource.id = b.ReadUInt32();
-                        resourceDictionary[resource.id] = resource;
+                        FindOrCreateAssetList(resourceDictionary, resource.id).Add(resource);
 
                         if (resource.dataType != DataType.SlResourceCollision)
                         {
@@ -130,8 +131,8 @@ namespace CpuGpuTool
                             case DataType.SlMaterial2:
                                 b.BaseStream.Seek(entry.cpuOffsetData + 0xC, SeekOrigin.Begin);
                                 // shader
-                                uint id1 = b.ReadUInt32();
-                                resource.references[id1] = new Resource() { id = id1, dataType = DataType.SlShader };
+                                id = b.ReadUInt32();
+                                resource.references.Add(new Resource() { id = id, dataType = DataType.SlShader });
                                 // textures
                                 for (int j = 0; j < 9; j++)
                                 {
@@ -146,8 +147,8 @@ namespace CpuGpuTool
                                         continue;
                                     }
                                     b.BaseStream.Seek(resource.cpuOffsetData + offset1 + 0xC, SeekOrigin.Begin);
-                                    id1 = b.ReadUInt32();
-                                    resource.references[id1] = new Resource() { id = id1, dataType = DataType.SlTexture };
+                                    id = b.ReadUInt32();
+                                    resource.references.Add(new Resource() { id = id, dataType = DataType.SlTexture });
                                 }
                                 // cbdesc
                                 for (int j = 0; j < 9; j++)
@@ -159,25 +160,25 @@ namespace CpuGpuTool
                                         continue;
                                     }
                                     b.BaseStream.Seek(resource.cpuOffsetData + offset1 + 0xC, SeekOrigin.Begin);
-                                    id1 = b.ReadUInt32();
-                                    resource.references[id1] = new Resource() { id = id1, dataType = DataType.SlConstantBufferDesc };
+                                    id = b.ReadUInt32();
+                                    resource.references.Add(new Resource() { id = id, dataType = DataType.SlConstantBufferDesc });
                                 }
                                 break;
                             case DataType.SlAnim:
                                 // SlSkeleton
                                 b.BaseStream.Seek(resource.cpuOffsetData + 0x10, SeekOrigin.Begin);
-                                uint id2 = b.ReadUInt32();
-                                resource.references[id2] = new Resource() { id = id2, dataType = DataType.SlSkeleton };
+                                id = b.ReadUInt32();
+                                resource.references.Add(new Resource() { id = id, dataType = DataType.SlSkeleton });
                                 break;
                             case DataType.SlModel:
                                 // SlSkeleton
                                 b.BaseStream.Seek(resource.cpuOffsetData + 0xC, SeekOrigin.Begin);
                                 int offset2 = b.ReadInt32();
                                 b.BaseStream.Seek(resource.cpuOffsetData + offset2 + 0xC, SeekOrigin.Begin);
-                                uint id3 = b.ReadUInt32();
-                                if (id3 != 0)
+                                id = b.ReadUInt32();
+                                if (id != 0)
                                 {
-                                    resource.references[id3] = new Resource() { id = id3, dataType = DataType.SlSkeleton };
+                                    resource.references.Add(new Resource() { id = id, dataType = DataType.SlSkeleton });
                                 }
                                 // SlMaterial
                                 b.BaseStream.Seek(resource.cpuOffsetData + 0x40, SeekOrigin.Begin);
@@ -185,8 +186,8 @@ namespace CpuGpuTool
                                 b.BaseStream.Seek(resource.cpuOffsetData + 0x60, SeekOrigin.Begin);
                                 for (int i = 0; i < materialCount; i++)
                                 {
-                                    id3 = b.ReadUInt32();
-                                    resource.references[id3] = new Resource() { id = id3, dataType = DataType.SlMaterial2 };
+                                    id = b.ReadUInt32();
+                                    resource.references.Add(new Resource() { id = id, dataType = DataType.SlMaterial2 });
                                 }
                                 break;
                         }
@@ -198,7 +199,7 @@ namespace CpuGpuTool
 
                         b.BaseStream.Seek(entry.cpuOffsetData + 0x14, SeekOrigin.Begin);
                         node.id = b.ReadUInt32();
-                        nodeDictionary[node.id] = node;
+                        FindOrCreateAssetList(nodeDictionary, node.id).Add(node);
 
                         b.BaseStream.Seek(entry.cpuOffsetData + 0x1C, SeekOrigin.Begin);
                         tmpOffset = b.ReadInt32();
@@ -219,54 +220,54 @@ namespace CpuGpuTool
                         if (tmpOffset != 0)
                         {
                             b.BaseStream.Seek(entry.cpuOffsetData + tmpOffset, SeekOrigin.Begin);
-                            node.parent = new Node() { id = b.ReadUInt32() };
+                            node.parent.Add(new Node { id = b.ReadUInt32() });
                         }
                         b.BaseStream.Seek(entry.cpuOffsetData + 0x68, SeekOrigin.Begin);
                         tmpOffset = b.ReadInt32();
                         if (tmpOffset != 0)
                         {
                             b.BaseStream.Seek(entry.cpuOffsetData + tmpOffset, SeekOrigin.Begin);
-                            node.definition = new Node() { id = b.ReadUInt32() };
+                            node.definition.Add(new Node { id = b.ReadUInt32() });
                         }
                         switch (node.dataType)
                         {
                             case DataType.Water13DefNode:
                                 // Water13Simulation
                                 b.BaseStream.Seek(entry.cpuOffsetData + 0xD0, SeekOrigin.Begin);
-                                uint id1 = b.ReadUInt32();
-                                node.references[id1] = new Resource() { id = id1, dataType = DataType.Water13Simulation };
+                                id = b.ReadUInt32();
+                                node.references.Add(new Resource() { id = id, dataType = DataType.Water13Simulation });
                                 // Water13Renderable
-                                id1 = b.ReadUInt32();
-                                node.references[id1] = new Resource() { id = id1, dataType = DataType.Water13Renderable };
+                                id = b.ReadUInt32();
+                                node.references.Add(new Resource() { id = id, dataType = DataType.Water13Renderable });
                                 break;
                             case DataType.Water13InstanceNode:
                                 // Water13SurfaceWavesDefNode
                                 b.BaseStream.Seek(entry.cpuOffsetData + 0x1D0, SeekOrigin.Begin);
-                                uint id2 = b.ReadUInt32();
-                                node.references[id2] = new Node() { id = id2, dataType = DataType.Water13SurfaceWavesDefNode };
+                                id = b.ReadUInt32();
+                                node.references.Add(new Node() { id = id, dataType = DataType.Water13SurfaceWavesDefNode });
                                 // WaterShader4DefinitionNode
-                                id2 = b.ReadUInt32();
-                                node.references[id2] = new Node() { id = id2, dataType = DataType.WaterShader4DefinitionNode };
+                                id = b.ReadUInt32();
+                                node.references.Add(new Node() { id = id, dataType = DataType.WaterShader4DefinitionNode });
                                 break;
                             case DataType.SeDefinitionParticleEmitterNode:
                                 // SeDefinitionParticleStyleNode
                                 b.BaseStream.Seek(entry.cpuOffsetData + 0x198, SeekOrigin.Begin);
-                                uint id3 = b.ReadUInt32();
-                                node.references[id3] = new Node() { id = id3, dataType = DataType.SeDefinitionParticleStyleNode };
+                                id = b.ReadUInt32();
+                                node.references.Add(new Node() { id = id, dataType = DataType.SeDefinitionParticleStyleNode });
                                 break;
                             case DataType.SeDefinitionParticleStyleNode:
                                 // SeDefinitionTextureNode
                                 b.BaseStream.Seek(entry.cpuOffsetData + 0x1D0, SeekOrigin.Begin);
-                                uint id4 = b.ReadUInt32();
-                                node.references[id4] = new Node() { id = id4, dataType = DataType.SeDefinitionTextureNode };
+                                id = b.ReadUInt32();
+                                node.references.Add(new Node() { id = id, dataType = DataType.SeDefinitionTextureNode });
                                 break;
                             case DataType.CameoObjectInstanceNode:
                                 // SeInstanceSplineNode
                                 b.BaseStream.Seek(entry.cpuOffsetData + 0x1A4, SeekOrigin.Begin);
-                                uint id5 = b.ReadUInt32();
-                                if (id5 != 0)
+                                id = b.ReadUInt32();
+                                if (id != 0)
                                 {
-                                    node.references[id5] = new Node() { id = id5, dataType = DataType.SeInstanceSplineNode };
+                                    node.references.Add(new Node() { id = id, dataType = DataType.SeInstanceSplineNode });
                                 }
                                 break;
                         }
@@ -286,51 +287,77 @@ namespace CpuGpuTool
                     gpuOffset = entry.gpuOffsetData + entry.gpuRelativeOffsetNextEntry;
                 }
             }
+
+            // Determine node links
             foreach (var pair in nodeDictionary)
             {
-                Node node = pair.Value;
-                if (node.parent != null && nodeDictionary.TryGetValue(node.parent.id, out Node parent))
+                foreach (var node in pair.Value)
                 {
-                    node.parent = parent;
-                    parent.daughters[node.id] = node;    
-                }
-                if (node.definition != null && nodeDictionary.TryGetValue(node.definition.id, out Node definition))
-                {
-                    node.definition = definition;
-                    definition.instances[node.id] = node;
-                }
-                if (resourceDictionary.TryGetValue(node.id, out Resource resource))
-                {
-                    node.references[resource.id] = resource;
-                    resource.referees[node.id] = node;
+                    if (node.parent.Count > 0 && nodeDictionary.TryGetValue(node.parent[0].id, out List<Node> parents))
+                    {
+                        node.parent = parents;
+                        foreach (Node parent in parents)
+                        {
+                            parent.daughters.Add(node);
+                        }
+                    }
+                    if (node.definition.Count > 0 && nodeDictionary.TryGetValue(node.definition[0].id, out List<Node> definitions))
+                    {
+                        node.definition = definitions;
+                        foreach (Node definition in definitions)
+                        {
+                            definition.instances.Add(node);
+                        }
+                    }
+                    if (resourceDictionary.TryGetValue(node.id, out List<Resource> resources))
+                    {
+                        node.references.AddRange(resources);          
+                    }
                 }
             }
-          
-            foreach (CpuEntry entry in entriesList)
+         
+            // Determine referees and full asset references
+            foreach (Asset entry in entriesList)
             {
-                List<uint> ids = new List<uint>(entry.references.Keys);
-                foreach (uint id in ids)
+                List<Asset> fullReferences = new List<Asset>();
+                foreach (Asset reference in entry.references)
                 {
-                    if(resourceDictionary.TryGetValue(id, out Resource foundResource) && foundResource.dataType == entry.references[id].dataType)
+                    if(resourceDictionary.TryGetValue(reference.id, out List<Resource> foundResources))
                     {
-                        entry.references[id] = foundResource;
-                        foundResource.referees[entry.id] = entry;
-                    }
-                    else if (nodeDictionary.TryGetValue(id, out Node foundNode) && foundNode.dataType == entry.references[id].dataType)
-                    {
-                        if (foundNode.parent == null || foundNode.parent.id != entry.id)
+                        foreach(Resource resource in foundResources)
                         {
-                            entry.references[id] = foundNode;
-                            foundNode.referees[entry.id] = entry;
+                            if (resource.dataType == reference.dataType)
+                            {
+                                fullReferences.Add(resource);
+                                resource.referees.Add(entry);
+                            }
                         }
-                        else
+                    }
+                    else if (nodeDictionary.TryGetValue(reference.id, out List<Node> foundNodes))
+                    {
+                        foreach(Node node in foundNodes)
                         {
-                            // If a reference is already a node parent, remove it from references
-                            entry.references.Remove(id);
+                            if(node.dataType == reference.dataType && 
+                                (node.parent.Count == 0 || node.parent[0].id != entry.id)) // If a reference is already a node parent, don't add it to reference
+                            {
+                                fullReferences.Add(node);
+                                node.referees.Add(entry);
+                            }
                         }
                     }
                 }
+                entry.references = fullReferences;
             }
+        }
+
+        public static List<T> FindOrCreateAssetList<T>(Dictionary<uint, List<T>> dict, uint id) where T : Asset
+        {
+            if (!dict.TryGetValue(id, out List<T> assetList))
+            {
+                assetList = new List<T>();
+                dict.Add(id, assetList);
+            }      
+            return assetList;
         }
 
         public void Reload()
@@ -340,13 +367,13 @@ namespace CpuGpuTool
 
         public void GetCpuData(int entryIndex, Stream sOut, int outOffset = 0)
         {
-            CpuEntry entry = entriesList[entryIndex];
+            Asset entry = entriesList[entryIndex];
             BinaryTools.WriteData(msCpuFile, sOut, entry.cpuRelativeOffsetNextEntry, entry.cpuOffsetDataHeader, outOffset);
         }
 
         public void GetGpuData(int entryIndex, Stream sOut, int outOffset = 0)
         {
-            CpuEntry entry = entriesList[entryIndex];
+            Asset entry = entriesList[entryIndex];
             BinaryTools.WriteData(msGpuFile, sOut, entry.gpuRelativeOffsetNextEntry, entry.gpuOffsetData, outOffset);
         }
 
@@ -354,14 +381,14 @@ namespace CpuGpuTool
         {
             using (FileStream fsIn = File.OpenRead(inFilePath))
             {
-                CpuEntry entry = entriesList[entryIndex];
+                Asset entry = entriesList[entryIndex];
                 BinaryTools.InsertData(fsIn, msCpuFile, length, inOffset, entry.cpuOffsetDataHeader + entry.cpuRelativeOffsetNextEntry);
             }
         }
 
         public int InsertCpuData(int entryIndex, Stream sIn, int length = -1, int inOffset = 0)
         {
-            CpuEntry entry = entriesList[entryIndex];
+            Asset entry = entriesList[entryIndex];
             return BinaryTools.InsertData(sIn, msCpuFile, length, inOffset, entry.cpuOffsetDataHeader + entry.cpuRelativeOffsetNextEntry);
         }
 
@@ -369,25 +396,25 @@ namespace CpuGpuTool
         {
             using (FileStream fsIn = File.OpenRead(inFilePath))
             {
-                CpuEntry entry = entriesList[entryIndex];
+                Asset entry = entriesList[entryIndex];
                 return BinaryTools.InsertData(fsIn, msGpuFile, length, inOffset, entry.gpuOffsetData + entry.gpuRelativeOffsetNextEntry);
             }
         }
         public int InsertGpuData(int entryIndex, Stream sIn, int length = -1, int inOffset = 0)
         {
-            CpuEntry entry = entriesList[entryIndex];
+            Asset entry = entriesList[entryIndex];
             return BinaryTools.InsertData(sIn, msGpuFile, length, inOffset, entry.gpuOffsetData + entry.gpuRelativeOffsetNextEntry);
         }
 
         public void DeleteCpuData(int entryIndex)
         {
-            CpuEntry entry = entriesList[entryIndex];
+            Asset entry = entriesList[entryIndex];
             BinaryTools.ShrinkStream(msCpuFile, entry.cpuOffsetDataHeader, entry.cpuRelativeOffsetNextEntry);
         }
 
         public void DeleteGpuData(int entryIndex)
         {
-            CpuEntry entry = entriesList[entryIndex];
+            Asset entry = entriesList[entryIndex];
             BinaryTools.ShrinkStream(msGpuFile, entry.gpuOffsetData, entry.gpuRelativeOffsetNextEntry);
         }
 
@@ -408,7 +435,7 @@ namespace CpuGpuTool
                 return 0;
             }
             // update gpuRelativeOffsetNextEntry and gpuFataLength in the cpu data header
-            CpuEntry entry = entriesList[entryIndex];
+            Asset entry = entriesList[entryIndex];
             ChangeGpuDataInfo(entryIndex, entry.gpuRelativeOffsetNextEntry, entry.gpuDataLength);
             return bytesWritten;
         }
@@ -450,8 +477,8 @@ namespace CpuGpuTool
 
         public string SaveCpuData(int entryIndex, string outFolderPath)
         {
-            CpuEntry entry = entriesList[entryIndex];
-            string start = "CPU_" + entry.dataType + "_";
+            Asset entry = entriesList[entryIndex];
+            string start = entry.id.ToString("X8") + "_CPU_" + entry.dataType + "_";
             string end = Path.GetFileName(ReplaceInvalidChars(entry.name));
             string fileName = start + end.Substring(Math.Max(0, start.Length + end.Length - 255));
 
@@ -461,10 +488,10 @@ namespace CpuGpuTool
 
         public string SaveGpuData(int entryIndex, string outFolderPath)
         {
-            CpuEntry entry = entriesList[entryIndex];
+            Asset entry = entriesList[entryIndex];
             if (entry.gpuDataLength > 0)
             {
-                string start = "GPU_" + entry.dataType + "_";
+                string start = entry.id.ToString("X8") + "_GPU_" + entry.dataType + "_";
                 string end = Path.GetFileName(ReplaceInvalidChars(entry.name));
                 string fileName = start + end.Substring(Math.Max(0, start.Length + end.Length - 255));
                 BinaryTools.WriteData(msGpuFile, Path.Combine(outFolderPath, fileName), entry.gpuDataLength, entry.gpuOffsetData);
@@ -481,7 +508,7 @@ namespace CpuGpuTool
             return string.Join(" ", filename.Split(invalidCharacters));
         }
 
-        public void WriteHeader(Stream s, CpuEntry entry)
+        public void WriteHeader(Stream s, Asset entry)
         {
             using (EndiannessAwareBinaryWriter b = new EndiannessAwareBinaryWriter(s, isLittleEndian, Encoding.ASCII, true))
             {
@@ -498,7 +525,7 @@ namespace CpuGpuTool
 
         public void ChangeEntryName(int entryIndex, string newName)
         {
-            CpuEntry entry = entriesList[entryIndex];
+            Asset entry = entriesList[entryIndex];
             using (EndiannessAwareBinaryReader br = new EndiannessAwareBinaryReader(msCpuFile, isLittleEndian, Encoding.ASCII, true))
             using (EndiannessAwareBinaryWriter bw = new EndiannessAwareBinaryWriter(msCpuFile, isLittleEndian, Encoding.ASCII, true))
             {
@@ -544,7 +571,7 @@ namespace CpuGpuTool
 
         public void ChangeEntryID(int entryIndex, uint id)
         {
-            CpuEntry entry = entriesList[entryIndex];
+            Asset entry = entriesList[entryIndex];
             using (EndiannessAwareBinaryWriter bw = new EndiannessAwareBinaryWriter(msCpuFile, isLittleEndian, Encoding.Default, true))
             {
                 if (entry as Resource != null)
@@ -561,7 +588,7 @@ namespace CpuGpuTool
 
         public bool ChangeDefinitionID(int entryIndex, uint id)
         {
-            CpuEntry entry = entriesList[entryIndex];
+            Asset entry = entriesList[entryIndex];
             if (entry as Node == null)
             {
                 return false;
@@ -583,7 +610,7 @@ namespace CpuGpuTool
 
         public bool ChangeParentID(int entryIndex, uint id)
         {
-            CpuEntry entry = entriesList[entryIndex];
+            Asset entry = entriesList[entryIndex];
             if (entry as Node == null)
             {
                 return false;

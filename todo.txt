@@ -1,4 +1,2 @@
 Fix duplicate nodes missing node links.
-Replace asset number with data type in file names of saved files.
-Fix filter not reapplying when navigating assets and hitting enter.
 Copy all asset dependencies option.
