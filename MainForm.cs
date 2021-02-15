@@ -213,6 +213,7 @@ namespace CpuGpuTool
             richTextBox1.Clear();
             richTextBox1.Text = details;
             FormatAssetLinks();
+            richTextBox1.SelectionStart = 0;
         }
 
         private void AddEntryLink(ref string details, Asset entry, int maxLength = 0)
